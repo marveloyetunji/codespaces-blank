@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from './supabaseClient'
+import Timeline from './Timeline'
 import { Skeleton, Empty } from './Skeleton'
 import { compressImage } from './compressImage'
 
@@ -146,6 +147,7 @@ export default function Citizen() {
             <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs ${COLORS[r.status]}`}>
               {r.status.replace('_', ' ')}
             </span>
+              <Timeline r={r} />
             {r.status === 'collected' && (
               <div className="mt-2 text-lg">
                 {r.rating ? (

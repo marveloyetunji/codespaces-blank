@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { supabase } from './supabaseClient'
+import { isUrgent, isOverdue } from './priority'
+import LocateControl from './LocateControl'
 import { distKm, fmtKm } from './geo'
 import { Skeleton, Empty } from './Skeleton'
 import { compressImage } from './compressImage'
@@ -102,6 +104,7 @@ export default function Collector() {
           zoom={jobs.length ? 13 : 6} className="h-full w-full">
           <TileLayer attribution="&copy; OpenStreetMap"
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <LocateControl />
           {open.map((j) => (
             <CircleMarker key={j.id} center={[j.lat, j.lng]} radius={10}
               pathOptions={{ color: HEX[j.status], fillColor: HEX[j.status], fillOpacity: 0.8 }}>
@@ -116,12 +119,12 @@ export default function Collector() {
       {!loaded && <Skeleton />}
       {loaded && jobs.length === 0 && <Empty icon="🚛" title="No jobs yet" text="Jobs assigned to you by the admin will show here." />}
       {sorted.map((j) => (
-        <div key={j.id} className="bg-white p-3 rounded-xl shadow space-y-2">
+        <div key={j.id} style={isOverdue(j) ? { borderLeft: "4px solid #dc2626" } : undefined} className="bg-white p-3 rounded-xl shadow space-y-2">
           <div className="flex gap-3">
             {j.photo_url && <img src={j.photo_url} className="w-16 h-16 object-cover rounded" />}
             {j.proof_url && <img src={j.proof_url} className="w-16 h-16 object-cover rounded border-2 border-green-600" />}
             <div className="flex-1 text-sm">
-              <p className="font-semibold">{j.waste_type}</p>
+              <p className="font-semibold">{j.waste_type}{isUrgent(j) && <span className="ml-2 text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full">URGENT</span>}{isOverdue(j) && <span className="ml-1 text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full">⏰ overdue</span>}</p>
               <p className="text-gray-600">{j.address}</p>
               {pos && j.status !== 'collected' && (
                 <p className="text-xs text-green-700 font-semibold">📍 {fmtKm(d(j))} away</p>

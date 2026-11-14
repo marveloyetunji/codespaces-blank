@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
+import { confetti } from './confetti'
 
 const TEXT = {
   citizen: {
@@ -36,6 +37,7 @@ export default function Toaster({ role }) {
           if (p.old && p.old.status === p.new.status) return
           const msg = map[p.new.status]
           if (msg) push(msg)
+          if (role === 'citizen' && p.new.status === 'collected') confetti()
         }
       })
       .subscribe()

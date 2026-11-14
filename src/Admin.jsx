@@ -5,6 +5,9 @@ import { exportCsv } from './exportCsv'
 import Analytics from './Analytics'
 import Users from './Users'
 import { supabase } from './supabaseClient'
+import { isUrgent, isOverdue } from './priority'
+import Timeline from './Timeline'
+import LocateControl from './LocateControl'
 import { Skeleton, Empty } from './Skeleton'
 
 const HEX = { pending: '#eab308', assigned: '#3b82f6', in_progress: '#f97316', collected: '#16a34a' }
@@ -103,6 +106,7 @@ export default function Admin() {
           zoom={reports.length ? 13 : 6} className="h-full w-full">
           <TileLayer attribution="&copy; OpenStreetMap"
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <LocateControl />
           {heat && hotspots.map((h, i) => (
             <Circle key={i} center={[h.lat, h.lng]} radius={150 + Math.min(h.n, 10) * 60}
               pathOptions={{ stroke: false, fillColor: h.n >= 3 ? '#dc2626' : '#f97316', fillOpacity: 0.3 }} />
@@ -143,21 +147,22 @@ export default function Admin() {
             {collectors.map((c) => <option key={c.id} value={c.id}>{c.name || 'Collector'}</option>)}
           </select>
         </div>
-        <p className="text-xs text-gray-500">Showing {shown.length} of {reports.length}</p>
+        <p className="text-xs text-gray-500">Showing {shown.length} of {reports.length} · <span className="text-red-600">{reports.filter(isOverdue).length} overdue</span></p>
       </div>
       {!loaded && <Skeleton />}
       {loaded && reports.length === 0 && <Empty icon="📭" title="No reports yet" text="New citizen reports will appear here." />}
       {shown.map((r) => (
-        <div key={r.id} className="bg-white p-3 rounded-xl shadow space-y-2">
+        <div key={r.id} style={isOverdue(r) ? { borderLeft: "4px solid #dc2626" } : undefined} className="bg-white p-3 rounded-xl shadow space-y-2">
           <div className="flex gap-3">
             {r.photo_url && <img src={r.photo_url} className="w-16 h-16 object-cover rounded" />}
             {r.proof_url && <img src={r.proof_url} className="w-16 h-16 object-cover rounded border-2 border-green-600" />}
             <div className="flex-1 text-sm">
-              <p className="font-semibold">{r.waste_type}</p>
+              <p className="font-semibold">{r.waste_type}{isUrgent(r) && <span className="ml-2 text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full">URGENT</span>}{isOverdue(r) && <span className="ml-1 text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full">⏰ overdue</span>}</p>
               <p className="text-gray-600">{r.address}</p>
               <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs ${BADGE[r.status]}`}>
                 {r.status.replace('_', ' ')}
               </span>
+              <Timeline r={r} />
             </div>
           </div>
           {r.status !== 'collected' && (

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
+import InstallBanner from './InstallBanner'
 import Auth from './Auth'
 import ResetPassword from './ResetPassword'
 import Toaster from './Toaster'
@@ -71,6 +72,7 @@ export default function App() {
       </header>
 
       <Toaster role={role} />
+      <InstallBanner />
 
       <main className="p-4">
         {tab === 'home' && <Home />}
