@@ -89,7 +89,7 @@ export default function Admin() {
         </MapContainer>
       </div>
 
-      <Users onChange={load} />
+      
       <Analytics reports={reports} />
       <div className="flex items-center justify-between">
         <h2 className="font-bold text-green-800">All reports</h2>
