@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
+import Users from './Users'
 import { supabase } from './supabaseClient'
 
 const HEX = { pending: '#eab308', assigned: '#3b82f6', in_progress: '#f97316', collected: '#16a34a' }
@@ -72,6 +73,7 @@ export default function Admin() {
         </MapContainer>
       </div>
 
+      <Users onChange={load} />
       <h2 className="font-bold text-green-800">All reports</h2>
       {reports.length === 0 && <p className="text-sm text-gray-500">No reports yet.</p>}
       {reports.map((r) => (
