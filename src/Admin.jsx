@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
+import Analytics from './Analytics'
 import Users from './Users'
 import { supabase } from './supabaseClient'
 
@@ -74,6 +75,7 @@ export default function Admin() {
       </div>
 
       <Users onChange={load} />
+      <Analytics reports={reports} />
       <h2 className="font-bold text-green-800">All reports</h2>
       {reports.length === 0 && <p className="text-sm text-gray-500">No reports yet.</p>}
       {reports.map((r) => (
