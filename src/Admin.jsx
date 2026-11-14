@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
+import { exportCsv } from './exportCsv'
 import Analytics from './Analytics'
 import Users from './Users'
 import { supabase } from './supabaseClient'
@@ -76,7 +77,10 @@ export default function Admin() {
 
       <Users onChange={load} />
       <Analytics reports={reports} />
-      <h2 className="font-bold text-green-800">All reports</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="font-bold text-green-800">All reports</h2>
+        <button onClick={() => exportCsv(reports, nameOf)} className="text-sm bg-green-700 text-white px-3 py-1 rounded-lg">⬇ Export CSV</button>
+      </div>
       {reports.length === 0 && <p className="text-sm text-gray-500">No reports yet.</p>}
       {reports.map((r) => (
         <div key={r.id} className="bg-white p-3 rounded-xl shadow space-y-2">
