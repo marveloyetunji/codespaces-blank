@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
+import { Splash } from './Skeleton'
 import Auth from './Auth'
 import ResetPassword from './ResetPassword'
 import Toaster from './Toaster'
@@ -37,9 +38,9 @@ export default function App() {
   }, [session])
 
   if (recovering) return <ResetPassword onDone={() => setRecovering(false)} />
-  if (!ready) return <div className="p-6 text-center">Loading...</div>
+  if (!ready) return <Splash />
   if (!session) return <Auth />
-  if (!profile) return <div className="p-6 text-center">Loading profile...</div>
+  if (!profile) return <Splash />
 
   const Screen = { admin: Admin, collector: Collector }[profile.role] || Citizen
 

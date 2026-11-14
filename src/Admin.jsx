@@ -5,6 +5,7 @@ import { exportCsv } from './exportCsv'
 import Analytics from './Analytics'
 import Users from './Users'
 import { supabase } from './supabaseClient'
+import { Skeleton, Empty } from './Skeleton'
 
 const HEX = { pending: '#eab308', assigned: '#3b82f6', in_progress: '#f97316', collected: '#16a34a' }
 const BADGE = {
@@ -16,6 +17,7 @@ const BADGE = {
 
 export default function Admin() {
   const [reports, setReports] = useState([])
+  const [loaded, setLoaded] = useState(false)
   const [collectors, setCollectors] = useState([])
   const [q, setQ] = useState('')
   const [fStatus, setFStatus] = useState('')
@@ -25,6 +27,7 @@ export default function Admin() {
   const load = useCallback(async () => {
     const r = await supabase.from('reports').select('*').order('created_at', { ascending: false })
     setReports(r.data || [])
+    setLoaded(true)
     const c = await supabase.from('profiles').select('id,name').eq('role', 'collector')
     setCollectors(c.data || [])
   }, [])
@@ -115,7 +118,8 @@ export default function Admin() {
         </div>
         <p className="text-xs text-gray-500">Showing {shown.length} of {reports.length}</p>
       </div>
-      {reports.length === 0 && <p className="text-sm text-gray-500">No reports yet.</p>}
+      {!loaded && <Skeleton />}
+      {loaded && reports.length === 0 && <Empty icon="📭" title="No reports yet" text="New citizen reports will appear here." />}
       {shown.map((r) => (
         <div key={r.id} className="bg-white p-3 rounded-xl shadow space-y-2">
           <div className="flex gap-3">

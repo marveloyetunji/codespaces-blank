@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from './supabaseClient'
+import { Skeleton, Empty } from './Skeleton'
 import { compressImage } from './compressImage'
 
 const TYPES = ['Household', 'Plastic', 'Organic', 'Electronic', 'Construction', 'Hazardous', 'Other']
@@ -33,6 +34,7 @@ export default function Citizen() {
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
   const [reports, setReports] = useState([])
+  const [loaded, setLoaded] = useState(false)
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -40,6 +42,7 @@ export default function Citizen() {
       .select('*')
       .order('created_at', { ascending: false })
     setReports(data || [])
+    setLoaded(true)
   }, [])
 
   useEffect(() => {
@@ -131,7 +134,8 @@ export default function Citizen() {
       </form>
 
       <h2 className="font-bold text-green-800">My reports</h2>
-      {reports.length === 0 && <p className="text-gray-500 text-sm">No reports yet.</p>}
+      {!loaded && <Skeleton />}
+      {loaded && reports.length === 0 && <Empty icon="🗑️" title="No reports yet" text="Spot waste? Use the form above to report it." />}
       {reports.map((r) => (
         <div key={r.id} className="bg-white p-3 rounded-xl shadow flex gap-3">
           {r.photo_url && <img src={r.photo_url} className="w-16 h-16 object-cover rounded" />}

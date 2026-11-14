@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { supabase } from './supabaseClient'
+import { Skeleton, Empty } from './Skeleton'
 import { compressImage } from './compressImage'
 
 const HEX = { assigned: '#3b82f6', in_progress: '#f97316', collected: '#16a34a' }
@@ -13,6 +14,7 @@ const BADGE = {
 
 export default function Collector() {
   const [jobs, setJobs] = useState([])
+  const [loaded, setLoaded] = useState(false)
   const [busyId, setBusyId] = useState(null)
   const [msg, setMsg] = useState('')
 
@@ -22,6 +24,7 @@ export default function Collector() {
       .select('*')
       .order('created_at', { ascending: false })
     setJobs(data || [])
+    setLoaded(true)
   }, [])
 
   useEffect(() => {
@@ -92,7 +95,8 @@ export default function Collector() {
 
       <h2 className="font-bold text-green-800">My jobs</h2>
       {msg && <p className="text-sm text-red-600">{msg}</p>}
-      {jobs.length === 0 && <p className="text-sm text-gray-500">No jobs assigned yet.</p>}
+      {!loaded && <Skeleton />}
+      {loaded && jobs.length === 0 && <Empty icon="🚛" title="No jobs yet" text="Jobs assigned to you by the admin will show here." />}
       {jobs.map((j) => (
         <div key={j.id} className="bg-white p-3 rounded-xl shadow space-y-2">
           <div className="flex gap-3">
