@@ -17,6 +17,10 @@ const BADGE = {
 export default function Admin() {
   const [reports, setReports] = useState([])
   const [collectors, setCollectors] = useState([])
+  const [q, setQ] = useState('')
+  const [fStatus, setFStatus] = useState('')
+  const [fType, setFType] = useState('')
+  const [fCol, setFCol] = useState('')
 
   const load = useCallback(async () => {
     const r = await supabase.from('reports').select('*').order('created_at', { ascending: false })
@@ -46,6 +50,13 @@ export default function Admin() {
     load()
   }
 
+  const shown = reports.filter((r) =>
+    (!fStatus || r.status === fStatus) &&
+    (!fType || r.waste_type === fType) &&
+    (!fCol || (fCol === 'none' ? !r.assigned_to : r.assigned_to === fCol)) &&
+    (!q || ((r.address || '') + ' ' + (r.description || '') + ' ' + r.waste_type).toLowerCase().includes(q.toLowerCase()))
+  )
+  const types = [...new Set(reports.map((r) => r.waste_type))]
   const count = (s) => reports.filter((r) => r.status === s).length
   const nameOf = (id) => collectors.find((c) => c.id === id)?.name || 'Collector'
   const center = reports[0] ? [reports[0].lat, reports[0].lng] : [9.08, 8.67]
@@ -81,8 +92,31 @@ export default function Admin() {
         <h2 className="font-bold text-green-800">All reports</h2>
         <button onClick={() => exportCsv(reports, nameOf)} className="text-sm bg-green-700 text-white px-3 py-1 rounded-lg">⬇ Export CSV</button>
       </div>
+      <div className="bg-white p-3 rounded-xl shadow space-y-2">
+        <input className="w-full border rounded-lg p-2 text-sm" placeholder="Search address or description"
+          value={q} onChange={(e) => setQ(e.target.value)} />
+        <div className="grid grid-cols-3 gap-2">
+          <select className="border rounded-lg p-2 text-xs" value={fStatus} onChange={(e) => setFStatus(e.target.value)}>
+            <option value="">All status</option>
+            <option value="pending">pending</option>
+            <option value="assigned">assigned</option>
+            <option value="in_progress">in progress</option>
+            <option value="collected">collected</option>
+          </select>
+          <select className="border rounded-lg p-2 text-xs" value={fType} onChange={(e) => setFType(e.target.value)}>
+            <option value="">All types</option>
+            {types.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+          <select className="border rounded-lg p-2 text-xs" value={fCol} onChange={(e) => setFCol(e.target.value)}>
+            <option value="">All collectors</option>
+            <option value="none">Unassigned</option>
+            {collectors.map((c) => <option key={c.id} value={c.id}>{c.name || 'Collector'}</option>)}
+          </select>
+        </div>
+        <p className="text-xs text-gray-500">Showing {shown.length} of {reports.length}</p>
+      </div>
       {reports.length === 0 && <p className="text-sm text-gray-500">No reports yet.</p>}
-      {reports.map((r) => (
+      {shown.map((r) => (
         <div key={r.id} className="bg-white p-3 rounded-xl shadow space-y-2">
           <div className="flex gap-3">
             {r.photo_url && <img src={r.photo_url} className="w-16 h-16 object-cover rounded" />}
