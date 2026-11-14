@@ -142,6 +142,18 @@ export default function Citizen() {
             <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs ${COLORS[r.status]}`}>
               {r.status.replace('_', ' ')}
             </span>
+            {r.status === 'pending' && (
+              <button
+                className="block mt-2 text-xs text-red-600 underline"
+                onClick={async () => {
+                  if (!window.confirm('Cancel this report?')) return
+                  await supabase.from('reports').delete().eq('id', r.id)
+                  load()
+                }}
+              >
+                Cancel report
+              </button>
+            )}
           </div>
         </div>
       ))}

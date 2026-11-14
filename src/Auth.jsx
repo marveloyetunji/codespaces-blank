@@ -38,6 +38,18 @@ export default function Auth() {
           placeholder="Password (min 6 chars)" value={password}
           onChange={(e) => setPassword(e.target.value)} minLength={6} required />
         {msg && <p className="text-red-600 text-sm">{msg}</p>}
+        {mode === 'login' && (
+          <button type="button" className="w-full text-sm text-gray-500"
+            onClick={async () => {
+              if (!email) return setMsg('Enter your email above first.')
+              const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin,
+              })
+              setMsg(error ? error.message : 'Reset link sent. Check your inbox and spam.')
+            }}>
+            Forgot password?
+          </button>
+        )}
         <button disabled={loading}
           className="w-full bg-green-700 text-white rounded-lg p-3 font-semibold disabled:opacity-50">
           {loading ? 'Please wait...' : mode === 'login' ? 'Log in' : 'Sign up'}
