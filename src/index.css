@@ -1,1 +1,43 @@
 @import "tailwindcss";
+
+/* ecotrack-ui */
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --color-green-50: #f1f8f4;
+  --color-green-100: #d9f2e4;
+  --color-green-600: #059669;
+  --color-green-700: #047857;
+  --color-green-800: #065f46;
+}
+
+body { background: #f1f8f4; -webkit-tap-highlight-color: transparent; }
+
+header {
+  position: sticky; top: 0; z-index: 1100;
+  background: linear-gradient(135deg, #065f46, #10b981) !important;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 1rem) !important;
+  box-shadow: 0 4px 18px rgba(6, 95, 70, .25);
+}
+header p.font-bold { font-size: 1.15rem; letter-spacing: .3px; }
+header p.font-bold::before { content: "♻️ "; }
+
+.shadow, .shadow-lg {
+  box-shadow: 0 6px 20px rgba(6, 95, 70, .08) !important;
+  border: 1px solid rgba(6, 95, 70, .06);
+}
+.rounded-xl { border-radius: 1rem !important; }
+
+button, label { transition: transform .12s ease, opacity .2s ease, box-shadow .2s ease; }
+button:active, label:active { transform: scale(.97); }
+.bg-green-700 { background-image: linear-gradient(135deg, #047857, #10b981); box-shadow: 0 4px 12px rgba(16, 185, 129, .3); }
+
+input, select, textarea { font-size: 16px !important; background: #fcfffd; }
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: #10b981 !important; box-shadow: 0 0 0 3px rgba(16, 185, 129, .2);
+}
+
+main > * { animation: fadeUp .35s ease both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+img { border-radius: .75rem; }
+.leaflet-container { z-index: 0; border-radius: 1rem; }
