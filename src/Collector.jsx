@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { supabase } from './supabaseClient'
+import { distKm, fmtKm } from './geo'
 import { Skeleton, Empty } from './Skeleton'
 import { compressImage } from './compressImage'
 
@@ -14,6 +15,7 @@ const BADGE = {
 
 export default function Collector() {
   const [jobs, setJobs] = useState([])
+  const [pos, setPos] = useState(null)
   const [loaded, setLoaded] = useState(false)
   const [busyId, setBusyId] = useState(null)
   const [msg, setMsg] = useState('')
@@ -65,7 +67,23 @@ export default function Collector() {
     setBusyId(null)
   }
 
+  useEffect(() => {
+    if (!navigator.geolocation) return
+    const id = navigator.geolocation.watchPosition(
+      (p) => setPos({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 10000 }
+    )
+    return () => navigator.geolocation.clearWatch(id)
+  }, [])
+
   const open = jobs.filter((j) => j.status !== 'collected')
+  const d = (j) => (pos ? distKm(pos.lat, pos.lng, j.lat, j.lng) : 0)
+  const sorted = [...jobs].sort((a, b) => {
+    const ca = a.status === 'collected' ? 1 : 0
+    const cb = b.status === 'collected' ? 1 : 0
+    return ca - cb || (pos ? d(a) - d(b) : 0)
+  })
   const center = jobs[0] ? [jobs[0].lat, jobs[0].lng] : [9.08, 8.67]
 
   return (
@@ -97,7 +115,7 @@ export default function Collector() {
       {msg && <p className="text-sm text-red-600">{msg}</p>}
       {!loaded && <Skeleton />}
       {loaded && jobs.length === 0 && <Empty icon="🚛" title="No jobs yet" text="Jobs assigned to you by the admin will show here." />}
-      {jobs.map((j) => (
+      {sorted.map((j) => (
         <div key={j.id} className="bg-white p-3 rounded-xl shadow space-y-2">
           <div className="flex gap-3">
             {j.photo_url && <img src={j.photo_url} className="w-16 h-16 object-cover rounded" />}
@@ -105,6 +123,9 @@ export default function Collector() {
             <div className="flex-1 text-sm">
               <p className="font-semibold">{j.waste_type}</p>
               <p className="text-gray-600">{j.address}</p>
+              {pos && j.status !== 'collected' && (
+                <p className="text-xs text-green-700 font-semibold">📍 {fmtKm(d(j))} away</p>
+              )}
               {j.description && <p className="text-gray-500 text-xs">{j.description}</p>}
               <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs ${BADGE[j.status]}`}>
                 {j.status.replace('_', ' ')}
