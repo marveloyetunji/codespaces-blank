@@ -5,6 +5,7 @@ import { exportCsv } from './exportCsv'
 import Analytics from './Analytics'
 import Users from './Users'
 import { supabase } from './supabaseClient'
+import SectionTabs from './SectionTabs'
 import { isUrgent, isOverdue } from './priority'
 import Timeline from './Timeline'
 import LocateControl from './LocateControl'
@@ -21,6 +22,7 @@ const BADGE = {
 export default function Admin() {
   const [reports, setReports] = useState([])
   const [loaded, setLoaded] = useState(false)
+  const [view, setView] = useState('active')
   const [collectors, setCollectors] = useState([])
   const [heat, setHeat] = useState(false)
   const [q, setQ] = useState('')
@@ -149,9 +151,12 @@ export default function Admin() {
         </div>
         <p className="text-xs text-gray-500">Showing {shown.length} of {reports.length} · <span className="text-red-600">{reports.filter(isOverdue).length} overdue</span></p>
       </div>
+      <SectionTabs view={view} setView={setView} loaded={loaded}
+        active={reports.filter((x) => x.status !== 'collected').length}
+        done={reports.filter((x) => x.status === 'collected').length} />
       {!loaded && <Skeleton />}
       {loaded && reports.length === 0 && <Empty icon="📭" title="No reports yet" text="New citizen reports will appear here." />}
-      {shown.map((r) => (
+      {shown.filter((x) => (view === 'done' ? x.status === 'collected' : x.status !== 'collected')).map((r) => (
         <div key={r.id} style={isOverdue(r) ? { borderLeft: "4px solid #dc2626" } : undefined} className="bg-white p-3 rounded-xl shadow space-y-2">
           <div className="flex gap-3">
             {r.photo_url && <img src={r.photo_url} className="w-16 h-16 object-cover rounded" />}

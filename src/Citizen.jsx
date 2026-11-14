@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from './supabaseClient'
+import SectionTabs from './SectionTabs'
 import EcoPoints from './EcoPoints'
 import Timeline from './Timeline'
 import { Skeleton, Empty } from './Skeleton'
@@ -37,6 +38,7 @@ export default function Citizen() {
   const [busy, setBusy] = useState(false)
   const [reports, setReports] = useState([])
   const [loaded, setLoaded] = useState(false)
+  const [view, setView] = useState('active')
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -141,9 +143,12 @@ export default function Citizen() {
 
       <EcoPoints reports={reports} />
       <h2 className="font-bold text-green-800">My reports</h2>
+      <SectionTabs view={view} setView={setView} loaded={loaded}
+        active={reports.filter((x) => x.status !== 'collected').length}
+        done={reports.filter((x) => x.status === 'collected').length} />
       {!loaded && <Skeleton />}
       {loaded && reports.length === 0 && <Empty icon="🗑️" title="No reports yet" text="Spot waste? Use the form above to report it." />}
-      {reports.map((r) => (
+      {reports.filter((x) => (view === 'done' ? x.status === 'collected' : x.status !== 'collected')).map((r) => (
         <div key={r.id} className="bg-white p-3 rounded-xl shadow flex gap-3">
           {r.photo_url && <img src={r.photo_url} className="w-16 h-16 object-cover rounded" />}
           {r.proof_url && <img src={r.proof_url} className="w-16 h-16 object-cover rounded border-2 border-green-600" />}
