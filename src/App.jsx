@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 import Auth from './Auth'
+import Admin from './Admin'
 import Citizen from './Citizen'
 
-const Admin = () => <p>Admin: map and assignment (Step 5)</p>
 const Collector = () => <p>Collector: assigned jobs (Step 6)</p>
 
 export default function App() {
