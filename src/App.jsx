@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 import Auth from './Auth'
+import Citizen from './Citizen'
 
-const Citizen = () => <p>Citizen: report waste (Step 4)</p>
 const Admin = () => <p>Admin: map and assignment (Step 5)</p>
 const Collector = () => <p>Collector: assigned jobs (Step 6)</p>
 

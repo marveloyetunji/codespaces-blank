@@ -1,0 +1,148 @@
+import { useEffect, useState, useCallback } from 'react'
+import { supabase } from './supabaseClient'
+
+const TYPES = ['Household', 'Plastic', 'Organic', 'Electronic', 'Construction', 'Hazardous', 'Other']
+const COLORS = {
+  pending: 'bg-yellow-100 text-yellow-800',
+  assigned: 'bg-blue-100 text-blue-800',
+  in_progress: 'bg-orange-100 text-orange-800',
+  collected: 'bg-green-100 text-green-800',
+}
+
+async function getAddress(lat, lng) {
+  const coords = `${lat.toFixed(5)}, ${lng.toFixed(5)}`
+  const key = import.meta.env.VITE_BIGDATACLOUD_KEY
+  const url = key
+    ? `https://api-bdc.net/data/reverse-geocode?latitude=${lat}&longitude=${lng}&localityLanguage=en&key=${key}`
+    : `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+  try {
+    const d = await (await fetch(url)).json()
+    return [d.locality, d.city, d.principalSubdivision].filter(Boolean).join(', ') || coords
+  } catch {
+    return coords
+  }
+}
+
+export default function Citizen() {
+  const [loc, setLoc] = useState(null)
+  const [address, setAddress] = useState('')
+  const [type, setType] = useState(TYPES[0])
+  const [desc, setDesc] = useState('')
+  const [photo, setPhoto] = useState(null)
+  const [msg, setMsg] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [reports, setReports] = useState([])
+
+  const load = useCallback(async () => {
+    const { data } = await supabase
+      .from('reports')
+      .select('*')
+      .order('created_at', { ascending: false })
+    setReports(data || [])
+  }, [])
+
+  useEffect(() => {
+    load()
+    const ch = supabase
+      .channel('my-reports')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, load)
+      .subscribe()
+    return () => supabase.removeChannel(ch)
+  }, [load])
+
+  const getLocation = () => {
+    setMsg('Getting location...')
+    navigator.geolocation.getCurrentPosition(
+      async (p) => {
+        const { latitude: lat, longitude: lng } = p.coords
+        setLoc({ lat, lng })
+        setAddress(await getAddress(lat, lng))
+        setMsg('')
+      },
+      () => setMsg('Allow location access in your browser settings.'),
+      { enableHighAccuracy: true, timeout: 15000 }
+    )
+  }
+
+  const submit = async (e) => {
+    e.preventDefault()
+    if (!loc) return setMsg('Tap "Use my location" first.')
+    setBusy(true)
+    setMsg('')
+    try {
+      let photo_url = null
+      if (photo) {
+        const { data: u } = await supabase.auth.getUser()
+        const path = `${u.user.id}/${Date.now()}.jpg`
+        const { error: upErr } = await supabase.storage
+          .from('waste-photos')
+          .upload(path, photo, { contentType: photo.type })
+        if (upErr) throw upErr
+        photo_url = supabase.storage.from('waste-photos').getPublicUrl(path).data.publicUrl
+      }
+      const { error } = await supabase.from('reports').insert({
+        photo_url,
+        lat: loc.lat,
+        lng: loc.lng,
+        address,
+        waste_type: type,
+        description: desc,
+      })
+      if (error) throw error
+      setLoc(null); setAddress(''); setDesc(''); setPhoto(null)
+      setMsg('Report submitted ✅')
+      load()
+    } catch (err) {
+      setMsg(err.message)
+    }
+    setBusy(false)
+  }
+
+  return (
+    <div className="max-w-md mx-auto space-y-4">
+      <form onSubmit={submit} className="bg-white p-4 rounded-2xl shadow space-y-3">
+        <h2 className="font-bold text-green-800">Report waste</h2>
+
+        <button type="button" onClick={getLocation}
+          className="w-full border border-green-700 text-green-700 rounded-lg p-3">
+          📍 {loc ? 'Update location' : 'Use my location'}
+        </button>
+        {address && <p className="text-sm text-gray-600">{address}</p>}
+
+        <select className="w-full border rounded-lg p-3" value={type}
+          onChange={(e) => setType(e.target.value)}>
+          {TYPES.map((t) => <option key={t}>{t}</option>)}
+        </select>
+
+        <textarea className="w-full border rounded-lg p-3" rows={3}
+          placeholder="Describe the waste (optional)" value={desc}
+          onChange={(e) => setDesc(e.target.value)} />
+
+        <input type="file" accept="image/*" capture="environment"
+          onChange={(e) => setPhoto(e.target.files[0] || null)} className="text-sm" />
+
+        {msg && <p className="text-sm text-red-600">{msg}</p>}
+
+        <button disabled={busy}
+          className="w-full bg-green-700 text-white rounded-lg p-3 font-semibold disabled:opacity-50">
+          {busy ? 'Submitting...' : 'Submit report'}
+        </button>
+      </form>
+
+      <h2 className="font-bold text-green-800">My reports</h2>
+      {reports.length === 0 && <p className="text-gray-500 text-sm">No reports yet.</p>}
+      {reports.map((r) => (
+        <div key={r.id} className="bg-white p-3 rounded-xl shadow flex gap-3">
+          {r.photo_url && <img src={r.photo_url} className="w-16 h-16 object-cover rounded" />}
+          <div className="flex-1 text-sm">
+            <p className="font-semibold">{r.waste_type}</p>
+            <p className="text-gray-600">{r.address}</p>
+            <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs ${COLORS[r.status]}`}>
+              {r.status.replace('_', ' ')}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
