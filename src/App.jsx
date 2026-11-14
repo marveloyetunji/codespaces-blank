@@ -1,21 +1,119 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
+import Auth from './Auth'
+
+const Citizen = () => <p>Citizen: report waste (Step 4)</p>
+const Admin = () => <p>Admin: map and assignment (Step 5)</p>
+const Collector = () => <p>Collector: assigned jobs (Step 6)</p>
 
 export default function App() {
-  const [status, setStatus] = useState('Checking...')
+  const [session, setSession] = useState(null)
+  const [profile, setProfile] = useState(null)
+  const [ready, setReady] = useState(false)
 
-    useEffect(() => {
-        supabase
-              .from('reports')
-                    .select('id', { count: 'exact', head: true })
-                          .then(({ error }) =>
-                                  setStatus(error ? 'Error: ' + error.message : 'Supabase connected ✅')
-                                        )
-                                          }, [])
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session)
+      setReady(true)
+    })
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
+    return () => sub.subscription.unsubscribe()
+  }, [])
 
-                                            return (
-                                                <div className="min-h-screen flex items-center justify-center bg-green-50">
-                                                      <h1 className="text-xl font-bold text-green-800">{status}</h1>
-                                                          </div>
-                                                            )
-                                                            }
+  useEffect(() => {
+    if (!session) return setProfile(null)
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', session.user.id)
+      .maybeSingle()
+      .then(({ data }) => setProfile(data))
+  }, [session])
+
+  if (!ready) return <div className="p-6 text-center">Loading...</div>
+  if (!session) return <Auth />
+  if (!profile) return <div className="p-6 text-center">Loading profile...</div>
+
+  const Screen = { admin: Admin, collector: Collector }[profile.role] || Citizen
+
+  return (
+    <div className="min-h-screen bg-green-50">
+      <header className="bg-green-700 text-white p-4 flex justify-between items-center">
+        <div>
+          <p className="font-bold">EcoTrack</p>
+          <p className="text-xs opacity-80">{profile.name} · {profile.role}</p>
+        </div>
+        <button
+          onClick={() => supabase.auth.signOut()}
+          className="text-sm bg-white/20 px-3 py-1 rounded"
+        >
+          Logout
+        </button>
+      </header>
+      <main className="p-4">
+        <Screen />
+      </main>
+    </div>
+  )
+}
+
+
+cat > src/App.jsx << 'EOF'
+import { useEffect, useState } from 'react'
+import { supabase } from './supabaseClient'
+import Auth from './Auth'
+
+const Citizen = () => <p>Citizen: report waste (Step 4)</p>
+const Admin = () => <p>Admin: map and assignment (Step 5)</p>
+const Collector = () => <p>Collector: assigned jobs (Step 6)</p>
+
+export default function App() {
+  const [session, setSession] = useState(null)
+  const [profile, setProfile] = useState(null)
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session)
+      setReady(true)
+    })
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
+    return () => sub.subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    if (!session) return setProfile(null)
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', session.user.id)
+      .maybeSingle()
+      .then(({ data }) => setProfile(data))
+  }, [session])
+
+  if (!ready) return <div className="p-6 text-center">Loading...</div>
+  if (!session) return <Auth />
+  if (!profile) return <div className="p-6 text-center">Loading profile...</div>
+
+  const Screen = { admin: Admin, collector: Collector }[profile.role] || Citizen
+
+  return (
+    <div className="min-h-screen bg-green-50">
+      <header className="bg-green-700 text-white p-4 flex justify-between items-center">
+        <div>
+          <p className="font-bold">EcoTrack</p>
+          <p className="text-xs opacity-80">{profile.name} · {profile.role}</p>
+        </div>
+        <button
+          onClick={() => supabase.auth.signOut()}
+          className="text-sm bg-white/20 px-3 py-1 rounded"
+        >
+          Logout
+        </button>
+      </header>
+      <main className="p-4">
+        <Screen />
+      </main>
+    </div>
+  )
+}
