@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, CircleMarker, Circle, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { exportCsv } from './exportCsv'
 import Analytics from './Analytics'
@@ -19,6 +19,7 @@ export default function Admin() {
   const [reports, setReports] = useState([])
   const [loaded, setLoaded] = useState(false)
   const [collectors, setCollectors] = useState([])
+  const [heat, setHeat] = useState(false)
   const [q, setQ] = useState('')
   const [fStatus, setFStatus] = useState('')
   const [fType, setFType] = useState('')
@@ -60,6 +61,15 @@ export default function Admin() {
     (!q || ((r.address || '') + ' ' + (r.description || '') + ' ' + r.waste_type).toLowerCase().includes(q.toLowerCase()))
   )
   const types = [...new Set(reports.map((r) => r.waste_type))]
+  const cells = {}
+  reports.forEach((r) => {
+    const k = Math.round(r.lat / 0.003) + ':' + Math.round(r.lng / 0.003)
+    const c = cells[k] || (cells[k] = { n: 0, lat: 0, lng: 0, address: r.address })
+    c.n++; c.lat += r.lat; c.lng += r.lng
+  })
+  const hotspots = Object.values(cells)
+    .map((c) => ({ ...c, lat: c.lat / c.n, lng: c.lng / c.n }))
+    .sort((a, b) => b.n - a.n)
   const count = (s) => reports.filter((r) => r.status === s).length
   const nameOf = (id) => collectors.find((c) => c.id === id)?.name || 'Collector'
   const center = reports[0] ? [reports[0].lat, reports[0].lng] : [9.08, 8.67]
@@ -75,11 +85,28 @@ export default function Admin() {
         ))}
       </div>
 
+      <button onClick={() => setHeat(!heat)}
+        className="w-full bg-white border rounded-xl p-2 text-sm font-semibold text-green-800">
+        {heat ? '📍 Show report pins only' : '🔥 Show hotspot heatmap'}
+      </button>
+      {heat && (
+        <div className="bg-white p-3 rounded-xl shadow text-sm space-y-1">
+          <p className="font-semibold text-green-800">🔥 Top hotspots</p>
+          {hotspots.length === 0 && <p className="text-xs text-gray-500">No data yet.</p>}
+          {hotspots.slice(0, 3).map((h, i) => (
+            <p key={i}>{i + 1}. {h.address || 'Unknown area'} · <b>{h.n}</b> report{h.n > 1 ? 's' : ''}</p>
+          ))}
+        </div>
+      )}
       <div className="h-64 rounded-2xl overflow-hidden shadow">
         <MapContainer key={reports.length ? 'has' : 'none'} center={center}
           zoom={reports.length ? 13 : 6} className="h-full w-full">
           <TileLayer attribution="&copy; OpenStreetMap"
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          {heat && hotspots.map((h, i) => (
+            <Circle key={i} center={[h.lat, h.lng]} radius={150 + Math.min(h.n, 10) * 60}
+              pathOptions={{ stroke: false, fillColor: h.n >= 3 ? '#dc2626' : '#f97316', fillOpacity: 0.3 }} />
+          ))}
           {reports.map((r) => (
             <CircleMarker key={r.id} center={[r.lat, r.lng]} radius={10}
               pathOptions={{ color: HEX[r.status], fillColor: HEX[r.status], fillOpacity: 0.8 }}>
