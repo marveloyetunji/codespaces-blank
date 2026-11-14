@@ -142,6 +142,29 @@ export default function Citizen() {
             <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs ${COLORS[r.status]}`}>
               {r.status.replace('_', ' ')}
             </span>
+            {r.status === 'collected' && (
+              <div className="mt-2 text-lg">
+                {r.rating ? (
+                  <span className="text-yellow-500">
+                    {'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}
+                    <span className="text-xs text-gray-500"> your rating</span>
+                  </span>
+                ) : (
+                  <div>
+                    <p className="text-xs text-gray-500">Rate this service:</p>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button key={n} className="text-yellow-500 text-2xl px-0.5"
+                        onClick={async () => {
+                          await supabase.rpc('rate_report', { p_id: r.id, p_rating: n })
+                          load()
+                        }}>
+                        ☆
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             {r.status === 'pending' && (
               <button
                 className="block mt-2 text-xs text-red-600 underline"

@@ -33,6 +33,7 @@ export default function Toaster({ role }) {
         if (p.eventType === 'INSERT') {
           if (map.insert) push(map.insert)
         } else if (p.eventType === 'UPDATE') {
+          if (p.old && p.old.status === p.new.status) return
           const msg = map[p.new.status]
           if (msg) push(msg)
         }

@@ -32,6 +32,16 @@ export default function Analytics({ reports }) {
   return (
     <div className="bg-white p-3 rounded-xl shadow space-y-4">
       <h2 className="font-bold text-green-800">Analytics</h2>
+      {(() => {
+        const rs = reports.filter((r) => r.rating)
+        const avgR = rs.length ? (rs.reduce((a, r) => a + r.rating, 0) / rs.length).toFixed(1) : '-'
+        return (
+          <p className="text-sm">
+            Average rating: <b>{avgR} ★</b>
+            <span className="text-xs text-gray-500"> ({rs.length} rated)</span>
+          </p>
+        )
+      })()}
 
       <div className="grid grid-cols-3 gap-2 text-center">
         <div className="bg-green-50 rounded-xl p-2">
