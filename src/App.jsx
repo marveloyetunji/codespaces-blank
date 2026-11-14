@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 import Auth from './Auth'
+import Collector from './Collector'
 import Admin from './Admin'
 import Citizen from './Citizen'
 
-const Collector = () => <p>Collector: assigned jobs (Step 6)</p>
 
 export default function App() {
   const [session, setSession] = useState(null)
