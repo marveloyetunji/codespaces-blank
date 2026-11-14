@@ -135,6 +135,7 @@ export default function Citizen() {
       {reports.map((r) => (
         <div key={r.id} className="bg-white p-3 rounded-xl shadow flex gap-3">
           {r.photo_url && <img src={r.photo_url} className="w-16 h-16 object-cover rounded" />}
+          {r.proof_url && <img src={r.proof_url} className="w-16 h-16 object-cover rounded border-2 border-green-600" />}
           <div className="flex-1 text-sm">
             <p className="font-semibold">{r.waste_type}</p>
             <p className="text-gray-600">{r.address}</p>
