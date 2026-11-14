@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from './supabaseClient'
+import { compressImage } from './compressImage'
 
 const TYPES = ['Household', 'Plastic', 'Organic', 'Electronic', 'Construction', 'Hazardous', 'Other']
 const COLORS = {
@@ -76,7 +77,7 @@ export default function Citizen() {
         const path = `${u.user.id}/${Date.now()}.jpg`
         const { error: upErr } = await supabase.storage
           .from('waste-photos')
-          .upload(path, photo, { contentType: photo.type })
+          .upload(path, await compressImage(photo), { contentType: 'image/jpeg' })
         if (upErr) throw upErr
         photo_url = supabase.storage.from('waste-photos').getPublicUrl(path).data.publicUrl
       }
