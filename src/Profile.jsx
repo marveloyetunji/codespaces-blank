@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from './supabaseClient'
+import ThemeToggle from './ThemeToggle'
 
 export default function Profile({ profile, email, onSaved }) {
   const [name, setName] = useState(profile.name || '')
@@ -61,6 +62,7 @@ export default function Profile({ profile, email, onSaved }) {
         className="w-full border border-red-300 text-red-600 rounded-xl p-3 font-semibold bg-white">
         Log out
       </button>
+      <ThemeToggle />
       <p className="text-center text-xs text-gray-400">EcoTrack v1.0 · Geolocation Waste Management</p>
     </div>
   )
