@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import { supabase } from './supabaseClient'
 import { isUrgent, isOverdue } from './priority'
 import LocateControl from './LocateControl'
-import { distKm, fmtKm } from './geo'
+import { distKm, fmtKm, getPos } from './geo'
 import { Skeleton, Empty } from './Skeleton'
 import { compressImage } from './compressImage'
 
@@ -51,6 +51,14 @@ export default function Collector() {
     setMsg('')
     try {
       const { data: u } = await supabase.auth.getUser()
+      const job = jobs.find((x) => x.id === id)
+      const here = await getPos()
+      const dist = distKm(here.lat, here.lng, job.lat, job.lng)
+      if (dist > 0.1 + Math.min(here.acc, 100) / 1000) {
+        setMsg('You are ' + fmtKm(dist) + ' from this report. Move within 100 m to mark it collected.')
+        setBusyId(null)
+        return
+      }
       const path = `${u.user.id}/proof-${Date.now()}.jpg`
       const { error: upErr } = await supabase.storage
         .from('waste-photos')

@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from './supabaseClient'
+import EcoPoints from './EcoPoints'
 import Timeline from './Timeline'
 import { Skeleton, Empty } from './Skeleton'
 import { compressImage } from './compressImage'
@@ -72,6 +73,10 @@ export default function Citizen() {
   const submit = async (e) => {
     e.preventDefault()
     if (!loc) return setMsg('Tap "Use my location" first.')
+    const { data: near } = await supabase.rpc('count_nearby_reports', {
+      p_lat: loc.lat, p_lng: loc.lng, p_meters: 50,
+    })
+    if (near > 0 && !window.confirm('A similar open report already exists within 50 m of this spot. Submit anyway?')) return
     setBusy(true)
     setMsg('')
     try {
@@ -134,6 +139,7 @@ export default function Citizen() {
         </button>
       </form>
 
+      <EcoPoints reports={reports} />
       <h2 className="font-bold text-green-800">My reports</h2>
       {!loaded && <Skeleton />}
       {loaded && reports.length === 0 && <Empty icon="🗑️" title="No reports yet" text="Spot waste? Use the form above to report it." />}

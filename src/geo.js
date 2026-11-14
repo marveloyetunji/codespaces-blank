@@ -13,3 +13,14 @@ export function distKm(lat1, lng1, lat2, lng2) {
 export function fmtKm(k) {
   return k < 1 ? Math.round(k * 1000) + ' m' : k.toFixed(1) + ' km'
 }
+
+// One fresh GPS reading (promise)
+export const getPos = () =>
+  new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error('Location is not supported on this device'))
+    navigator.geolocation.getCurrentPosition(
+      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }),
+      () => reject(new Error('Turn on location to verify the collection')),
+      { enableHighAccuracy: true, timeout: 15000 }
+    )
+  })
