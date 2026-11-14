@@ -1,6 +1,6 @@
 # EcoTrack: Mobile-Based Waste Reporting and Collection Management System Using Geolocation
 
-Live app: https://codespaces-blank-teal-psi.vercel.app
+Live app: https://ecotrack-waste.vercel.app
 
 Stack: React, Vite, Tailwind, Leaflet/OpenStreetMap, Supabase (Auth, Postgres, Storage, Realtime), BigDataCloud, Vercel.
 
