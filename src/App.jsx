@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 import Auth from './Auth'
+import Toaster from './Toaster'
 import Collector from './Collector'
 import Admin from './Admin'
 import Citizen from './Citizen'
@@ -50,6 +51,7 @@ export default function App() {
           Logout
         </button>
       </header>
+      <Toaster role={profile.role} />
       <main className="p-4">
         <Screen />
       </main>
