@@ -3,6 +3,15 @@ import { Mail, Lock, User } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import Logo from './Logo'
 
+function Field({ icon: Icon, ...p }) {
+  return (
+    <div className="relative">
+      <Icon size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+      <input className="field !pl-10" {...p} />
+    </div>
+  )
+}
+
 export default function Auth() {
   const [mode, setMode] = useState('login')
   const [name, setName] = useState('')
@@ -29,13 +38,6 @@ export default function Auth() {
     setOk(!error)
     setMsg(error ? error.message : 'Reset link sent. Check your inbox and spam.')
   }
-
-  const Field = ({ icon: Icon, ...p }) => (
-    <div className="relative">
-      <Icon size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-      <input className="field !pl-10" {...p} />
-    </div>
-  )
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center px-6 pt-16 pb-8">
