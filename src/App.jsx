@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Home, User, Truck, LayoutDashboard, Users as UsersIcon } from 'lucide-react'
+import { Home, User, Truck, LayoutDashboard, Users as UsersIcon, ClipboardList, Bell as BellIcon, Plus } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import Auth from './Auth'
 import ResetPassword from './ResetPassword'
@@ -8,6 +8,7 @@ import InstallBanner from './InstallBanner'
 import { Splash } from './Skeleton'
 import Logo from './Logo'
 import Citizen from './Citizen'
+import ReportForm from './ReportForm'
 import Admin from './Admin'
 import Collector from './Collector'
 import Users from './Users'
@@ -15,11 +16,10 @@ import Profile from './Profile'
 import Bell from './Bell'
 import Notifications from './Notifications'
 
-const HOME = { citizen: Citizen, collector: Collector, admin: Admin }
 const TABS = {
-  citizen: [['home', Home, 'Reports'], ['profile', User, 'Profile']],
-  collector: [['home', Truck, 'Jobs'], ['profile', User, 'Profile']],
-  admin: [['home', LayoutDashboard, 'Dashboard'], ['users', UsersIcon, 'Users'], ['profile', User, 'Profile']],
+  citizen: [['home', Home, 'Home'], ['history', ClipboardList, 'Reports'], ['report', Plus, 'Report', true], ['alerts', BellIcon, 'Alerts'], ['profile', User, 'Profile']],
+  collector: [['home', Truck, 'Jobs'], ['alerts', BellIcon, 'Alerts'], ['profile', User, 'Profile']],
+  admin: [['home', LayoutDashboard, 'Dashboard'], ['users', UsersIcon, 'Users'], ['alerts', BellIcon, 'Alerts'], ['profile', User, 'Profile']],
 }
 
 export default function App() {
@@ -49,40 +49,53 @@ export default function App() {
   if (!session) return <Auth />
   if (!profile) return <Splash />
 
-  const role = HOME[profile.role] ? profile.role : 'citizen'
-  const Screen = HOME[role]
+  const role = TABS[profile.role] ? profile.role : 'citizen'
 
   return (
-    <div className="min-h-screen bg-green-50 pb-20">
-      <header className="bg-green-700 text-white px-4 pb-3 flex items-center gap-3 sticky top-0 z-[1100]"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' }}>
-        <Logo size={30} />
+    <div className="min-h-screen bg-green-50 pb-24">
+      <header className="bg-white border-b border-gray-200 px-4 pb-2 flex items-center gap-2 sticky top-0 z-[1100]"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)' }}>
+        <Logo size={30} dark />
         <div className="leading-tight">
-          <p className="font-semibold">EcoTrack</p>
-          <p className="text-xs text-white/70 capitalize">{profile.name || 'User'} · {role}</p>
+          <p className="font-bold text-gray-900">EcoTrack</p>
+          <p className="text-[11px] text-gray-500 capitalize">{role}</p>
         </div>
-      <Bell userId={session.user.id} onOpen={() => setTab('alerts')} />
+        <Bell userId={session.user.id} onOpen={() => setTab('alerts')} />
       </header>
 
       <Toaster role={role} />
       <InstallBanner />
 
       <main className="p-4">
-        {tab === 'home' && <Screen />}
-        {tab === 'users' && role === 'admin' && <Users />}
+        {role === 'citizen' && tab === 'home' && <Citizen view="home" go={setTab} name={profile.name} />}
+        {role === 'citizen' && tab === 'history' && <Citizen view="history" go={setTab} />}
+        {role === 'citizen' && tab === 'report' && <ReportForm onDone={() => setTab('history')} />}
+        {role === 'collector' && tab === 'home' && <Collector />}
+        {role === 'admin' && tab === 'home' && <Admin />}
+        {role === 'admin' && tab === 'users' && <Users />}
         {tab === 'alerts' && <Notifications userId={session.user.id} />}
         {tab === 'profile' && <Profile profile={profile} email={session.user.email} onSaved={setProfile} />}
       </main>
 
-      <nav className="fixed bottom-0 inset-x-0 z-[1100] bg-white border-t flex"
+      <nav className="fixed bottom-0 inset-x-0 z-[1100] bg-white border-t border-gray-200 flex items-end"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-        {TABS[role].map(([key, Icon, label]) => (
-          <button key={key} onClick={() => setTab(key)}
-            className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs ${tab === key ? 'text-green-700 font-semibold' : 'text-gray-400'}`}>
-            <Icon size={22} strokeWidth={tab === key ? 2.25 : 1.75} />
-            {label}
-          </button>
-        ))}
+        {TABS[role].map(([key, Icon, label, center]) =>
+          center ? (
+            <button key={key} onClick={() => setTab(key)} aria-label={label}
+              className="flex-1 flex justify-center pb-3">
+              <span className="-mt-7 w-14 h-14 rounded-full bg-green-800 text-white flex items-center justify-center border-4 border-white"
+                style={{ boxShadow: '0 4px 10px rgba(31,122,53,.4)' }}>
+                <Icon size={26} />
+              </span>
+            </button>
+          ) : (
+            <button key={key} onClick={() => setTab(key)}
+              className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-[11px] ${tab === key ? 'text-green-700 font-semibold' : 'text-gray-400'}`}>
+              <Icon size={22} strokeWidth={tab === key ? 2.25 : 1.75} />
+              {label}
+            </button>
+          )
+        )}
       </nav>
     </div>
   )

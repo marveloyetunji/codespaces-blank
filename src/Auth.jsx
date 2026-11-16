@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Mail, Lock, User } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import Logo from './Logo'
 
@@ -23,48 +24,59 @@ export default function Auth() {
   }
 
   const forgot = async () => {
-    if (!email) { setOk(false); return setMsg('Enter your email first.') }
+    if (!email) return setMsg('Enter your email first.')
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin })
     setOk(!error)
     setMsg(error ? error.message : 'Reset link sent. Check your inbox and spam.')
   }
 
-  return (
-    <div className="min-h-screen bg-green-50 flex flex-col">
-      <div className="bg-green-700 px-6 pt-14 pb-10 text-white">
-        <Logo size={44} />
-        <h1 className="text-2xl font-bold mt-4">EcoTrack</h1>
-        <p className="text-sm text-white/80 mt-1 max-w-xs">
-          Report waste that has not been collected, and follow it until it is cleared.
-        </p>
-      </div>
+  const Field = ({ icon: Icon, ...p }) => (
+    <div className="relative">
+      <Icon size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+      <input className="field !pl-10" {...p} />
+    </div>
+  )
 
-      <form onSubmit={submit} className="p-6 space-y-3 w-full max-w-sm mx-auto">
-        <h2 className="text-lg font-semibold">{mode === 'login' ? 'Log in' : 'Create an account'}</h2>
+  return (
+    <div className="min-h-screen bg-white flex flex-col items-center px-6 pt-16 pb-8">
+      <Logo size={56} dark />
+      <p className="mt-2 text-lg font-bold text-gray-900">EcoTrack</p>
+
+      <h1 className="mt-8 text-2xl font-bold text-green-700">
+        {mode === 'login' ? 'Welcome back' : 'Create your account'}
+      </h1>
+
+      <form onSubmit={submit} className="w-full max-w-sm mt-8 space-y-4">
         {mode === 'signup' && (
-          <input className="w-full border rounded-lg p-3 bg-white" placeholder="Full name"
-            value={name} onChange={(e) => setName(e.target.value)} required />
+          <Field icon={User} placeholder="Full name" value={name}
+            onChange={(e) => setName(e.target.value)} required />
         )}
-        <input className="w-full border rounded-lg p-3 bg-white" type="email" placeholder="Email"
-          value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <input className="w-full border rounded-lg p-3 bg-white" type="password"
-          placeholder="Password (min 6 characters)" value={password}
+        <Field icon={Mail} type="email" placeholder="Email" value={email}
+          onChange={(e) => setEmail(e.target.value)} required />
+        <Field icon={Lock} type="password" placeholder="Password (min 6 characters)" value={password}
           onChange={(e) => setPassword(e.target.value)} minLength={6} required />
 
         {msg && <p className={`text-sm ${ok ? 'text-green-700' : 'text-red-600'}`}>{msg}</p>}
 
         <button disabled={loading}
-          className="w-full bg-green-700 text-white rounded-lg p-3 font-semibold disabled:opacity-50">
-          {loading ? 'Please wait...' : mode === 'login' ? 'Log in' : 'Sign up'}
+          className="w-full bg-green-700 text-white rounded-lg py-3 font-semibold disabled:opacity-50">
+          {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Sign up'}
         </button>
+
         {mode === 'login' && (
-          <button type="button" onClick={forgot} className="w-full text-sm text-gray-500">Forgot password?</button>
+          <button type="button" onClick={forgot} className="w-full text-sm text-gray-700 py-2">
+            Forgot password?
+          </button>
         )}
-        <button type="button" className="w-full text-sm text-green-700 font-medium"
-          onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setMsg('') }}>
-          {mode === 'login' ? 'No account? Sign up' : 'Have an account? Log in'}
-        </button>
       </form>
+
+      <p className="mt-auto pt-10 text-sm text-gray-700">
+        {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
+        <button type="button" className="text-green-700 font-semibold"
+          onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setMsg('') }}>
+          {mode === 'login' ? 'Sign up' : 'Log in'}
+        </button>
+      </p>
     </div>
   )
 }

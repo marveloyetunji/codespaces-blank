@@ -2,24 +2,23 @@
 
 @theme {
   --font-sans: 'Inter', system-ui, sans-serif;
-  --color-green-50: #F4F7F4;
-  --color-green-100: #E2EBE5;
-  --color-green-200: #C9D9CF;
-  --color-green-600: #15966D;
-  --color-green-700: #075C43;
-  --color-green-800: #054432;
+  --color-green-50: #F6F9F6;
+  --color-green-100: #E3F1E6;
+  --color-green-200: #C7E3CD;
+  --color-green-600: #3DAE57;
+  --color-green-700: #2E9B47;
+  --color-green-800: #1F7A35;
 }
 
-body { background: #F4F7F4; color: #202B26; -webkit-tap-highlight-color: transparent; }
-
-/* flat surfaces: border instead of shadow, modest radius */
-.shadow, .shadow-lg, .shadow-xl { box-shadow: none !important; border: 1px solid #DDE5DF; }
+body { background: #F6F9F6; color: #1C2420; -webkit-tap-highlight-color: transparent; }
+.shadow, .shadow-lg, .shadow-xl { box-shadow: none !important; border: 1px solid #E1E8E2; }
 .rounded-3xl, .rounded-2xl { border-radius: .75rem !important; }
-.rounded-xl { border-radius: .5rem !important; }
 
-input, select, textarea { font-size: 16px !important; }
-input:focus, select:focus, textarea:focus {
-  outline: none; border-color: #15966D !important; box-shadow: 0 0 0 2px rgba(21,150,109,.2);
+.field {
+  width: 100%; padding: .75rem; background: #fff; border-radius: 10px;
+  border: 1px solid #2E9B47; box-shadow: 0 2px 4px rgba(46,155,71,.22);
 }
+.field:focus { outline: none; box-shadow: 0 0 0 3px rgba(46,155,71,.25); }
+input, select, textarea { font-size: 16px !important; }
 button, label { cursor: pointer; }
 .leaflet-container { z-index: 0; }
