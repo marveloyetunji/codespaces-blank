@@ -11,9 +11,11 @@ import Timeline from './Timeline'
 import LocateControl from './LocateControl'
 import { Skeleton, Empty } from './Skeleton'
 
-const HEX = { pending: '#eab308', assigned: '#3b82f6', in_progress: '#f97316', collected: '#16a34a' }
+const HEX = { pending: '#eab308', approved: '#15966D', rejected: '#9ca3af', assigned: '#3b82f6', in_progress: '#f97316', collected: '#16a34a' }
 const BADGE = {
   pending: 'bg-yellow-100 text-yellow-800',
+  approved: 'bg-teal-100 text-teal-800',
+  rejected: 'bg-red-100 text-red-800',
   assigned: 'bg-blue-100 text-blue-800',
   in_progress: 'bg-orange-100 text-orange-800',
   collected: 'bg-green-100 text-green-800',
@@ -47,13 +49,23 @@ export default function Admin() {
     return () => supabase.removeChannel(ch)
   }, [load])
 
+  const review = async (id, status, reason) => {
+    const { error } = await supabase.from('reports')
+      .update(status === 'rejected' ? { status, rejection_reason: reason } : { status }).eq('id', id)
+    if (error) window.alert(error.message)
+    load()
+  }
+  const reject = (id) => {
+    const reason = window.prompt('Reason for rejecting this report:')
+    if (reason && reason.trim()) review(id, 'rejected', reason.trim())
+  }
   const assign = async (id, collectorId) => {
     await supabase
       .from('reports')
       .update(
         collectorId
           ? { assigned_to: collectorId, status: 'assigned' }
-          : { assigned_to: null, status: 'pending' }
+          : { assigned_to: null, status: 'approved' }
       )
       .eq('id', id)
     load()
@@ -81,11 +93,11 @@ export default function Admin() {
 
   return (
     <div className="max-w-md mx-auto space-y-4">
-      <div className="grid grid-cols-4 gap-2 text-center">
-        {['pending', 'assigned', 'in_progress', 'collected'].map((s) => (
+      <div className="grid grid-cols-5 gap-2 text-center">
+        {['pending', 'approved', 'assigned', 'in_progress', 'collected'].map((s) => (
           <div key={s} className={`rounded-xl p-2 ${BADGE[s]}`}>
             <p className="text-xl font-bold">{count(s)}</p>
-            <p className="text-[10px]">{s.replace('_', ' ')}</p>
+            <p className="text-[10px]">{s === 'pending' ? 'submitted' : s.replace('_', ' ')}</p>
           </div>
         ))}
       </div>
@@ -116,7 +128,7 @@ export default function Admin() {
           {reports.map((r) => (
             <CircleMarker key={r.id} center={[r.lat, r.lng]} radius={10}
               pathOptions={{ color: HEX[r.status], fillColor: HEX[r.status], fillOpacity: 0.8 }}>
-              <Popup>{r.waste_type} · {r.status.replace('_', ' ')}<br />{r.address}</Popup>
+              <Popup>{r.waste_type} · {(r.status === 'pending' ? 'submitted' : r.status.replace('_', ' '))}<br />{r.address}</Popup>
             </CircleMarker>
           ))}
         </MapContainer>
@@ -135,9 +147,11 @@ export default function Admin() {
           <select className="border rounded-lg p-2 text-xs" value={fStatus} onChange={(e) => setFStatus(e.target.value)}>
             <option value="">All status</option>
             <option value="pending">pending</option>
+            <option value="approved">approved</option>
             <option value="assigned">assigned</option>
             <option value="in_progress">in progress</option>
             <option value="collected">collected</option>
+            <option value="rejected">rejected</option>
           </select>
           <select className="border rounded-lg p-2 text-xs" value={fType} onChange={(e) => setFType(e.target.value)}>
             <option value="">All types</option>
@@ -152,11 +166,11 @@ export default function Admin() {
         <p className="text-xs text-gray-500">Showing {shown.length} of {reports.length} · <span className="text-red-600">{reports.filter(isOverdue).length} overdue</span></p>
       </div>
       <SectionTabs view={view} setView={setView} loaded={loaded}
-        active={reports.filter((x) => x.status !== 'collected').length}
-        done={reports.filter((x) => x.status === 'collected').length} />
+        active={reports.filter((x) => !['collected', 'rejected'].includes(x.status)).length}
+        done={reports.filter((x) => ['collected', 'rejected'].includes(x.status)).length} />
       {!loaded && <Skeleton />}
       {loaded && reports.length === 0 && <Empty icon="📭" title="No reports yet" text="New citizen reports will appear here." />}
-      {shown.filter((x) => (view === 'done' ? x.status === 'collected' : x.status !== 'collected')).map((r) => (
+      {shown.filter((x) => (view === 'done' ? ['collected', 'rejected'].includes(x.status) : !['collected', 'rejected'].includes(x.status))).map((r) => (
         <div key={r.id} style={isOverdue(r) ? { borderLeft: "4px solid #dc2626" } : undefined} className="bg-white p-3 rounded-xl shadow space-y-2">
           <div className="flex gap-3">
             {r.photo_url && <img src={r.photo_url} className="w-16 h-16 object-cover rounded" />}
@@ -165,12 +179,22 @@ export default function Admin() {
               <p className="font-semibold">{r.waste_type}{isUrgent(r) && <span className="ml-2 text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full">URGENT</span>}{isOverdue(r) && <span className="ml-1 text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full">⏰ overdue</span>}</p>
               <p className="text-gray-600">{r.address}</p>
               <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs ${BADGE[r.status]}`}>
-                {r.status.replace('_', ' ')}
+                {(r.status === 'pending' ? 'submitted' : r.status.replace('_', ' '))}
               </span>
-              <Timeline r={r} />
+              {r.status === 'rejected'
+                ? <p className="mt-2 text-xs text-red-700">Rejected: {r.rejection_reason}</p>
+                : <Timeline r={r} />}
             </div>
           </div>
-          {r.status !== 'collected' && (
+          {r.status === 'pending' && (
+            <div className="flex gap-2">
+              <button onClick={() => review(r.id, 'approved')}
+                className="flex-1 bg-green-700 text-white rounded-lg p-2 text-sm font-semibold">Approve</button>
+              <button onClick={() => reject(r.id)}
+                className="flex-1 border border-red-300 text-red-600 rounded-lg p-2 text-sm font-semibold">Reject</button>
+            </div>
+          )}
+          {(r.status === 'approved' || r.status === 'assigned') && (
             <select className="w-full border rounded-lg p-2 text-sm"
               value={r.assigned_to || ''} onChange={(e) => assign(r.id, e.target.value)}>
               <option value="">Unassigned</option>

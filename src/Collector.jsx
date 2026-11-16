@@ -127,11 +127,11 @@ export default function Collector() {
       <h2 className="font-bold text-green-800">My jobs</h2>
       {msg && <p className="text-sm text-red-600">{msg}</p>}
       <SectionTabs view={view} setView={setView} loaded={loaded}
-        active={jobs.filter((x) => x.status !== 'collected').length}
-        done={jobs.filter((x) => x.status === 'collected').length} />
+        active={jobs.filter((x) => !['collected', 'rejected'].includes(x.status)).length}
+        done={jobs.filter((x) => ['collected', 'rejected'].includes(x.status)).length} />
       {!loaded && <Skeleton />}
       {loaded && jobs.length === 0 && <Empty icon="🚛" title="No jobs yet" text="Jobs assigned to you by the admin will show here." />}
-      {sorted.filter((x) => (view === 'done' ? x.status === 'collected' : x.status !== 'collected')).map((j) => (
+      {sorted.filter((x) => (view === 'done' ? ['collected', 'rejected'].includes(x.status) : !['collected', 'rejected'].includes(x.status))).map((j) => (
         <div key={j.id} style={isOverdue(j) ? { borderLeft: "4px solid #dc2626" } : undefined} className="bg-white p-3 rounded-xl shadow space-y-2">
           <div className="flex gap-3">
             {j.photo_url && <img src={j.photo_url} className="w-16 h-16 object-cover rounded" />}

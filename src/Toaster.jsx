@@ -4,6 +4,8 @@ import { confetti } from './confetti'
 
 const TEXT = {
   citizen: {
+    approved: 'Your report was approved',
+    rejected: 'Your report was rejected. Open it to see why',
     assigned: 'Your report has been assigned to a collector 🚛',
     in_progress: 'A collector is on the way to your report 🧭',
     collected: 'Your report has been collected ✅',

@@ -9,6 +9,8 @@ import { compressImage } from './compressImage'
 const TYPES = ['Household', 'Plastic', 'Organic', 'Electronic', 'Construction', 'Hazardous', 'Other']
 const COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
+  approved: 'bg-teal-100 text-teal-800',
+  rejected: 'bg-red-100 text-red-800',
   assigned: 'bg-blue-100 text-blue-800',
   in_progress: 'bg-orange-100 text-orange-800',
   collected: 'bg-green-100 text-green-800',
@@ -144,11 +146,11 @@ export default function Citizen() {
       <EcoPoints reports={reports} />
       <h2 className="font-bold text-green-800">My reports</h2>
       <SectionTabs view={view} setView={setView} loaded={loaded}
-        active={reports.filter((x) => x.status !== 'collected').length}
-        done={reports.filter((x) => x.status === 'collected').length} />
+        active={reports.filter((x) => !['collected', 'rejected'].includes(x.status)).length}
+        done={reports.filter((x) => ['collected', 'rejected'].includes(x.status)).length} />
       {!loaded && <Skeleton />}
       {loaded && reports.length === 0 && <Empty icon="🗑️" title="No reports yet" text="Spot waste? Use the form above to report it." />}
-      {reports.filter((x) => (view === 'done' ? x.status === 'collected' : x.status !== 'collected')).map((r) => (
+      {reports.filter((x) => (view === 'done' ? ['collected', 'rejected'].includes(x.status) : !['collected', 'rejected'].includes(x.status))).map((r) => (
         <div key={r.id} className="bg-white p-3 rounded-xl shadow flex gap-3">
           {r.photo_url && <img src={r.photo_url} className="w-16 h-16 object-cover rounded" />}
           {r.proof_url && <img src={r.proof_url} className="w-16 h-16 object-cover rounded border-2 border-green-600" />}
@@ -156,9 +158,11 @@ export default function Citizen() {
             <p className="font-semibold">{r.waste_type}</p>
             <p className="text-gray-600">{r.address}</p>
             <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs ${COLORS[r.status]}`}>
-              {r.status.replace('_', ' ')}
+              {(r.status === 'pending' ? 'submitted' : r.status.replace('_', ' '))}
             </span>
-              <Timeline r={r} />
+              {r.status === 'rejected'
+                ? <p className="mt-2 text-xs text-red-700">Rejected: {r.rejection_reason}</p>
+                : <Timeline r={r} />}
             {r.status === 'collected' && (
               <div className="mt-2 text-lg">
                 {r.rating ? (
