@@ -12,6 +12,8 @@ import Admin from './Admin'
 import Collector from './Collector'
 import Users from './Users'
 import Profile from './Profile'
+import Bell from './Bell'
+import Notifications from './Notifications'
 
 const HOME = { citizen: Citizen, collector: Collector, admin: Admin }
 const TABS = {
@@ -59,6 +61,7 @@ export default function App() {
           <p className="font-semibold">EcoTrack</p>
           <p className="text-xs text-white/70 capitalize">{profile.name || 'User'} · {role}</p>
         </div>
+      <Bell userId={session.user.id} onOpen={() => setTab('alerts')} />
       </header>
 
       <Toaster role={role} />
@@ -67,6 +70,7 @@ export default function App() {
       <main className="p-4">
         {tab === 'home' && <Screen />}
         {tab === 'users' && role === 'admin' && <Users />}
+        {tab === 'alerts' && <Notifications userId={session.user.id} />}
         {tab === 'profile' && <Profile profile={profile} email={session.user.email} onSaved={setProfile} />}
       </main>
 
