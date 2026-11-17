@@ -197,9 +197,9 @@ export default function Collector() {
       {loaded && page === 'map' && (
         <div className="space-y-3">
           <div className="h-[60vh] rounded-xl overflow-hidden border border-gray-200">
-            <MapContainer key={open.length ? 'has' : 'none'} center={center}
+            <MapContainer maxZoom={19} key={open.length ? 'has' : 'none'} center={center}
               zoom={open.length ? 13 : 6} className="h-full w-full">
-              <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
               <LocateControl />
               {open.map((j) => (
                 <CircleMarker key={j.id} center={[j.lat, j.lng]} radius={10}

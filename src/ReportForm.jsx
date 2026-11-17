@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { MapPin, Camera, ArrowLeft } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { compressImage } from './compressImage'
 import { todayStr, SLOTS, fmtDate } from './schedule'
+import LocationPicker from './LocationPicker'
 
 const TYPES = ['Household', 'Plastic', 'Glass', 'Paper', 'Organic', 'Electronic', 'Construction', 'Hazardous', 'Other']
 
@@ -29,9 +30,23 @@ function Line({ label, value }) {
   )
 }
 
+function accuracyText(acc, manual) {
+  if (manual) return { text: 'Pin placed by hand.', tone: 'text-gray-600' }
+  if (acc == null) return null
+  const n = Math.round(acc)
+  if (acc <= 20) return { text: `Good signal, accurate to about ${n} m.`, tone: 'text-green-700' }
+  if (acc <= 50) return { text: `Fair signal, about ${n} m. Check the pin is on the right spot.`, tone: 'text-amber-700' }
+  return {
+    text: `Weak signal, about ${n} m. Move the pin to the exact spot, or try again outside.`,
+    tone: 'text-red-600',
+  }
+}
+
 export default function ReportForm({ onDone }) {
   const [step, setStep] = useState('form')
   const [loc, setLoc] = useState(null)
+  const [acc, setAcc] = useState(null)
+  const [manual, setManual] = useState(false)
   const [address, setAddress] = useState('')
   const [type, setType] = useState(TYPES[0])
   const [quantity, setQuantity] = useState('')
@@ -43,26 +58,56 @@ export default function ReportForm({ onDone }) {
   const [locating, setLocating] = useState(false)
   const [busy, setBusy] = useState(false)
   const preview = useMemo(() => (photo ? URL.createObjectURL(photo) : null), [photo])
+  const watch = useRef({ id: null, timer: null })
+
+  const stopWatch = () => {
+    if (watch.current.id != null) navigator.geolocation.clearWatch(watch.current.id)
+    clearTimeout(watch.current.timer)
+    watch.current = { id: null, timer: null }
+  }
+  useEffect(() => stopWatch, [])
 
   const locate = () => {
     if (!navigator.geolocation) return setMsg('This device does not support location.')
-    setLocating(true); setMsg('')
-    navigator.geolocation.getCurrentPosition(
-      async (p) => {
-        const { latitude: lat, longitude: lng } = p.coords
-        setLoc({ lat, lng })
-        setAddress(await getAddress(lat, lng))
-        setLocating(false)
+    stopWatch()
+    setLocating(true); setMsg(''); setManual(false)
+    let best = null
+
+    const finish = async () => {
+      stopWatch()
+      setLocating(false)
+      if (best) setAddress(await getAddress(best.lat, best.lng))
+    }
+
+    watch.current.id = navigator.geolocation.watchPosition(
+      (p) => {
+        const c = { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }
+        if (!best || c.acc < best.acc) {
+          best = c
+          setLoc({ lat: c.lat, lng: c.lng })
+          setAcc(c.acc)
+        }
+        if (c.acc <= 15) finish()
       },
       (e) => {
+        if (best) return finish()
+        stopWatch()
         setLocating(false)
         setMsg(e.code === 1
           ? 'Location is blocked. Allow it in your browser settings and try again.'
           : 'Could not get your location. Move to an open area and try again.')
       },
-      { enableHighAccuracy: true, timeout: 15000 }
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
     )
+    watch.current.timer = setTimeout(finish, 12000)
   }
+
+  const moveTo = useCallback(async (lat, lng) => {
+    setLoc({ lat, lng })
+    setManual(true)
+    setAcc(null)
+    setAddress(await getAddress(lat, lng))
+  }, [])
 
   const review = (e) => {
     e.preventDefault()
@@ -107,6 +152,8 @@ export default function ReportForm({ onDone }) {
     }
   }
 
+  const a = accuracyText(acc, manual)
+
   if (step === 'confirm') {
     return (
       <div className="max-w-md mx-auto space-y-4">
@@ -119,6 +166,7 @@ export default function ReportForm({ onDone }) {
           <Line label="Waste type" value={type} />
           {quantity.trim() && <Line label="Quantity" value={quantity.trim()} />}
           <Line label="Location" value={address} />
+          <Line label="Position" value={manual ? 'Placed by hand' : acc != null ? `GPS, about ${Math.round(acc)} m` : 'GPS'} />
           {desc.trim() && <Line label="Description" value={desc.trim()} />}
           {date && <Line label="Preferred date" value={fmtDate(date) + (slot ? ', ' + slot : '')} />}
         </div>
@@ -144,8 +192,10 @@ export default function ReportForm({ onDone }) {
         <button type="button" onClick={locate} disabled={locating}
           className="field flex items-center gap-2 text-left text-green-700 font-medium">
           <MapPin size={18} />
-          {locating ? 'Getting location...' : loc ? 'Update location' : 'Use my location'}
+          {locating ? 'Finding the best signal...' : loc ? 'Refresh my location' : 'Use my location'}
         </button>
+        {loc && <LocationPicker lat={loc.lat} lng={loc.lng} acc={acc} onMove={moveTo} />}
+        {a && <p className={`text-xs ${a.tone}`}>{a.text}</p>}
         {address && <p className="text-sm text-gray-600">{address}</p>}
       </div>
 

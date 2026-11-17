@@ -309,9 +309,9 @@ export default function Admin() {
           )}
 
           <div className="h-[60vh] rounded-xl overflow-hidden border border-gray-200">
-            <MapContainer key={onMap.length ? 'has' : 'none'} center={center}
+            <MapContainer maxZoom={19} key={onMap.length ? 'has' : 'none'} center={center}
               zoom={onMap.length ? 13 : 6} className="h-full w-full">
-              <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
               <LocateControl />
               {heat && hotspots.map((h, i) => (
                 <Circle key={i} center={[h.lat, h.lng]} radius={150 + Math.min(h.n, 10) * 60}
