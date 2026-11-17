@@ -83,6 +83,7 @@ function ReportRow({ r, collectors, reload }) {
 
       {open && (
         <div className="space-y-2 text-sm">
+          {r.quantity && <p className="text-gray-700">Quantity: {r.quantity}</p>}
           {r.description && <p className="text-gray-700">{r.description}</p>}
           {r.proof_url && <img src={r.proof_url} alt="Proof of collection" className="w-full h-36 object-cover rounded-lg" />}
           {r.status === 'rejected'

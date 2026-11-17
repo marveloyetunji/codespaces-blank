@@ -82,6 +82,7 @@ function Job({ j, pos, onChanged }) {
           </p>
           <p className="text-gray-500">{j.address}</p>
           {j.preferred_date && <p className="text-xs text-green-700">Preferred: {fmtPref(j)}</p>}
+          {j.quantity && <p className="text-gray-600 text-xs mt-0.5">Quantity: {j.quantity}</p>}
           {j.description && <p className="text-gray-600 text-xs mt-0.5">{j.description}</p>}
           <div className="flex items-center gap-2 mt-1">
             <span className={`px-2 py-0.5 rounded text-xs capitalize ${STYLE[j.status]}`}>{LABEL(j.status)}</span>

@@ -7,6 +7,8 @@ const CONTACT_EMAIL = 'Flameskody@gmail.com'
 const GUIDE = [
   ['Household', 'Bag it and tie it. Keep it off the road and away from drains.'],
   ['Plastic', 'Rinse bottles and containers. Keep them apart from food waste.'],
+  ['Glass', 'Wrap broken glass in paper or cardboard and label it so collectors can handle it safely.'],
+  ['Paper', 'Keep paper and cardboard dry and flat. Wet paper cannot be recycled.'],
   ['Organic', 'Food and garden waste. Keep it dry and covered so it does not attract pests.'],
   ['Electronic', 'Phones, batteries and cables. Never mix them with general waste.'],
   ['Construction', 'Rubble, wood and metal. Keep it clear of walkways.'],

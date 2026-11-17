@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { Recycle, Plus, ClipboardList, Bell, User, Star } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import SectionTabs from './SectionTabs'
+import Impact from './Impact'
 import Track from './Track'
 import Timeline from './Timeline'
 import { Skeleton, Empty } from './Skeleton'
@@ -149,6 +150,8 @@ export default function Citizen({ view = 'home', go, name }) {
       </div>
 
       <Track reports={reports} />
+
+      <Impact reports={reports} />
 
       <div className="flex items-center justify-between">
         <h2 className="font-semibold text-green-700">Recent reports</h2>

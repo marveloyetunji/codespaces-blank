@@ -13,6 +13,7 @@ import Admin from './Admin'
 import Collector from './Collector'
 import Users from './Users'
 import Profile from './Profile'
+import Onboarding from './Onboarding'
 import Schedule from './Schedule'
 import Bell from './Bell'
 import Notifications from './Notifications'
@@ -29,6 +30,9 @@ export default function App() {
   const [ready, setReady] = useState(false)
   const [recovering, setRecovering] = useState(false)
   const [tab, setTab] = useState('home')
+  const [seen, setSeen] = useState(() => {
+    try { return localStorage.getItem('onboarded') === '1' } catch (e) { return true }
+  })
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => { setSession(data.session); setReady(true) })
@@ -47,7 +51,7 @@ export default function App() {
 
   if (recovering) return <ResetPassword onDone={() => setRecovering(false)} />
   if (!ready) return <Splash />
-  if (!session) return <Auth />
+  if (!session) return seen ? <Auth /> : <Onboarding onDone={() => setSeen(true)} />
   if (!profile) return <Splash />
 
   const role = TABS[profile.role] ? profile.role : 'citizen'
