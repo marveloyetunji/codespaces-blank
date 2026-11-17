@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { LogOut, ChevronRight, ArrowLeft, User, Lock, Recycle, HelpCircle, Mail } from 'lucide-react'
+import { LogOut, ChevronRight, ArrowLeft, User, Lock, Recycle, HelpCircle, Mail, Phone } from 'lucide-react'
 import { supabase } from './supabaseClient'
+import { COUNTRIES, splitPhone, checkPhone } from './phone'
 
 const CONTACT_EMAIL = 'Flameskody@gmail.com'
 
@@ -107,11 +108,55 @@ function PasswordEdit({ onBack }) {
   )
 }
 
+function PhoneEdit({ profile, onSaved, onBack }) {
+  const start = splitPhone(profile.phone)
+  const [dial, setDial] = useState(start.dial)
+  const [num, setNum] = useState(start.num)
+  const [msg, setMsg] = useState('')
+  const [ok, setOk] = useState(true)
+  const [busy, setBusy] = useState(false)
+
+  const save = async () => {
+    const r = checkPhone(dial, num)
+    if (r.error) { setOk(false); return setMsg(r.error) }
+    setBusy(true)
+    const { data, error } = await supabase.from('profiles')
+      .update({ phone: r.value }).eq('id', profile.id).select().maybeSingle()
+    setBusy(false)
+    if (error) { setOk(false); return setMsg(error.message) }
+    if (data) onSaved(data)
+    setOk(true)
+    setMsg(r.value ? 'Phone number saved.' : 'Phone number removed.')
+  }
+
+  return (
+    <Page title="Phone number" onBack={onBack}>
+      <p className="text-sm text-gray-600">
+        Admins can use this to reach you about your reports. Leave it empty and save to remove it.
+      </p>
+      <div className="flex gap-2">
+        <select className="field !w-28 !px-2 shrink-0" value={dial} aria-label="Country code"
+          onChange={(e) => setDial(e.target.value)}>
+          {COUNTRIES.map(([c, d]) => <option key={c} value={d}>{c} {d}</option>)}
+        </select>
+        <input className="field flex-1" type="tel" inputMode="tel" placeholder="Phone number"
+          value={num} onChange={(e) => setNum(e.target.value)} />
+      </div>
+      {msg && <p className={`text-sm ${ok ? 'text-green-700' : 'text-red-600'}`}>{msg}</p>}
+      <button onClick={save} disabled={busy}
+        className="w-full bg-green-700 text-white rounded-lg py-3 font-semibold disabled:opacity-50">
+        {busy ? 'Saving...' : 'Save'}
+      </button>
+    </Page>
+  )
+}
+
 export default function Profile({ profile, email, onSaved }) {
   const [view, setView] = useState(null)
   const back = () => setView(null)
 
   if (view === 'name') return <NameEdit profile={profile} onSaved={onSaved} onBack={back} />
+  if (view === 'phone') return <PhoneEdit profile={profile} onSaved={onSaved} onBack={back} />
   if (view === 'password') return <PasswordEdit onBack={back} />
 
   if (view === 'guide') return (
@@ -145,11 +190,13 @@ export default function Profile({ profile, email, onSaved }) {
         </div>
         <p className="mt-3 text-lg font-bold text-gray-900">{profile.name || 'No name'}</p>
         <p className="text-sm text-gray-500 capitalize">{profile.role} account</p>
+        <p className="text-sm text-gray-500">{profile.phone || 'No phone number added'}</p>
         <button onClick={() => setView('name')} className="text-sm text-green-700 font-medium mt-1">Edit my profile</button>
       </div>
 
       <div className="space-y-2">
         <Row icon={User} label="Edit name" onClick={() => setView('name')} />
+        <Row icon={Phone} label="Phone number" onClick={() => setView('phone')} />
         <Row icon={Lock} label="Change password" onClick={() => setView('password')} />
         <Row icon={Recycle} label="Waste sorting guide" onClick={() => setView('guide')} />
         <Row icon={HelpCircle} label="FAQ" onClick={() => setView('faq')} />
