@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { MapPin, Camera } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { compressImage } from './compressImage'
+import { todayStr, SLOTS } from './schedule'
 
 const TYPES = ['Household', 'Plastic', 'Organic', 'Electronic', 'Construction', 'Hazardous', 'Other']
 
@@ -24,6 +25,8 @@ export default function ReportForm({ onDone }) {
   const [address, setAddress] = useState('')
   const [type, setType] = useState(TYPES[0])
   const [desc, setDesc] = useState('')
+  const [date, setDate] = useState('')
+  const [slot, setSlot] = useState('')
   const [photo, setPhoto] = useState(null)
   const [msg, setMsg] = useState('')
   const [locating, setLocating] = useState(false)
@@ -54,6 +57,7 @@ export default function ReportForm({ onDone }) {
     e.preventDefault()
     if (busy) return
     if (!loc) return setMsg('Tap "Use my location" first.')
+    if (date && date < todayStr()) return setMsg('Choose today or a later date.')
     setBusy(true); setMsg('')
     try {
       const { data: near } = await supabase.rpc('count_nearby_reports', {
@@ -75,6 +79,7 @@ export default function ReportForm({ onDone }) {
       const { error } = await supabase.from('reports').insert({
         photo_url, lat: loc.lat, lng: loc.lng, address,
         waste_type: type, description: desc.trim(),
+        preferred_date: date || null, preferred_slot: date ? (slot || null) : null,
       })
       if (error) throw error
       onDone()
@@ -122,6 +127,17 @@ export default function ReportForm({ onDone }) {
             onChange={(e) => setPhoto(e.target.files[0] || null)} />
         </label>
         {preview && <img src={preview} alt="Preview" className="w-full h-40 object-cover rounded-lg" />}
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-gray-700">Preferred collection date (optional)</p>
+        <div className="grid grid-cols-2 gap-2">
+          <input type="date" className="field" min={todayStr()} value={date} onChange={(e) => setDate(e.target.value)} />
+          <select className="field" value={slot} onChange={(e) => setSlot(e.target.value)} disabled={!date}>
+            <option value="">Any time</option>
+            {Object.entries(SLOTS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+        </div>
       </div>
 
       {msg && <p className="text-sm text-red-600">{msg}</p>}

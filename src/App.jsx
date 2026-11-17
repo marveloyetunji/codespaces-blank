@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Home, User, Truck, LayoutDashboard, Users as UsersIcon, ClipboardList, Bell as BellIcon, Plus } from 'lucide-react'
+import { Home, User, Truck, LayoutDashboard, Users as UsersIcon, ClipboardList, Bell as BellIcon, Plus, CalendarDays } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import Auth from './Auth'
 import ResetPassword from './ResetPassword'
@@ -13,11 +13,12 @@ import Admin from './Admin'
 import Collector from './Collector'
 import Users from './Users'
 import Profile from './Profile'
+import Schedule from './Schedule'
 import Bell from './Bell'
 import Notifications from './Notifications'
 
 const TABS = {
-  citizen: [['home', Home, 'Home'], ['history', ClipboardList, 'Reports'], ['report', Plus, 'Report', true], ['alerts', BellIcon, 'Alerts'], ['profile', User, 'Profile']],
+  citizen: [['home', Home, 'Home'], ['schedule', CalendarDays, 'Schedule'], ['report', Plus, 'Report', true], ['history', ClipboardList, 'Reports'], ['profile', User, 'Profile']],
   collector: [['home', Truck, 'Jobs'], ['alerts', BellIcon, 'Alerts'], ['profile', User, 'Profile']],
   admin: [['home', LayoutDashboard, 'Dashboard'], ['users', UsersIcon, 'Users'], ['alerts', BellIcon, 'Alerts'], ['profile', User, 'Profile']],
 }
@@ -69,6 +70,7 @@ export default function App() {
       <main className="p-4">
         {role === 'citizen' && tab === 'home' && <Citizen view="home" go={setTab} name={profile.name} />}
         {role === 'citizen' && tab === 'history' && <Citizen view="history" go={setTab} />}
+        {role === 'citizen' && tab === 'schedule' && <Schedule />}
         {role === 'citizen' && tab === 'report' && <ReportForm onDone={() => setTab('history')} />}
         {role === 'collector' && tab === 'home' && <Collector />}
         {role === 'admin' && tab === 'home' && <Admin />}

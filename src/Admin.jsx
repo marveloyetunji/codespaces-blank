@@ -10,6 +10,7 @@ import LocateControl from './LocateControl'
 import { Skeleton, Empty } from './Skeleton'
 import { exportCsv } from './exportCsv'
 import { isUrgent, isOverdue } from './priority'
+import { fmtPref } from './schedule'
 
 const STYLE = {
   pending: 'bg-amber-50 text-amber-700',
@@ -71,6 +72,7 @@ function ReportRow({ r, collectors, reload }) {
             {isOverdue(r) && <span className="ml-1 text-[10px] bg-red-50 text-red-700 px-1.5 py-0.5 rounded">Overdue</span>}
           </p>
           <p className="text-gray-500 truncate">{r.address}</p>
+          {r.preferred_date && <p className="text-xs text-green-700">Preferred: {fmtPref(r)}</p>}
           <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs capitalize ${STYLE[r.status]}`}>{LABEL(r.status)}</span>
           {collector && <span className="ml-2 text-xs text-gray-500">{collector.name || 'Collector'}</span>}
         </div>
