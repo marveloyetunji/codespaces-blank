@@ -195,7 +195,7 @@ export default function Admin() {
   const center = onMap[0] ? [onMap[0].lat, onMap[0].lng] : [9.08, 8.67]
 
   return (
-    <div className="max-w-md mx-auto space-y-4">
+    <div className="max-w-md lg:max-w-5xl mx-auto space-y-4">
       <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
 
       <div className="flex bg-white border border-gray-200 rounded-xl p-1 gap-1">
@@ -287,7 +287,9 @@ export default function Admin() {
             done={reports.filter(isClosed).length} />
 
           {reports.length === 0 && <Empty title="No reports yet" text="New resident reports will appear here." />}
-          {shown.map((r) => <ReportRow key={r.id} r={r} collectors={collectors} reload={load} />)}
+          <div className="grid gap-3 lg:grid-cols-2">
+            {shown.map((r) => <ReportRow key={r.id} r={r} collectors={collectors} reload={load} />)}
+          </div>
         </div>
       )}
 

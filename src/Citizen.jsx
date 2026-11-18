@@ -16,7 +16,7 @@ const STYLE = {
   collected: 'bg-green-100 text-green-800',
   rejected: 'bg-red-50 text-red-700',
 }
-const LABEL = (s) => (s === 'pending' ? 'Submitted' : s.replace('_', ' '))
+const LABEL = (s) => ({ pending: 'Received', approved: 'Approved', assigned: 'Collector assigned', in_progress: 'Being attended to', collected: 'Completed', rejected: 'Rejected' }[s] || s)
 const isClosed = (r) => ['collected', 'rejected'].includes(r.status)
 const LEVELS = [[0, 'Seedling'], [50, 'Sprout'], [150, 'Eco Warrior'], [300, 'Eco Hero']]
 

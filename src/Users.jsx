@@ -37,7 +37,7 @@ export default function Users() {
   const noPhone = users.filter((u) => !u.phone).length
 
   return (
-    <div className="max-w-md mx-auto space-y-4">
+    <div className="max-w-md lg:max-w-3xl mx-auto space-y-4">
       <h1 className="text-xl font-bold text-gray-900">Users</h1>
 
       <div className="grid grid-cols-3 gap-3 text-center">
