@@ -175,12 +175,16 @@ export default function Citizen({ view = 'home', go, name }) {
     <div className="max-w-md mx-auto space-y-5">
       <p className="text-sm text-gray-500">Hello, {(name || 'there').split(' ')[0]}</p>
 
-      <div className="bg-green-700 text-white rounded-xl p-4">
-        <p className="text-sm opacity-90">Eco points</p>
-        <p className="text-3xl font-bold">{points}</p>
-        <p className="text-xs opacity-90 mt-1">
-          {LEVELS[li][1]}{next ? ` · ${next[0] - points} to ${next[1]}` : ' · top level'}
-        </p>
+      <div className="bg-white border border-gray-200 rounded-xl p-3 flex items-center gap-3">
+        <div className="w-12 h-12 rounded-full bg-green-100 text-green-800 flex items-center justify-center font-bold">{points}</div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold">{LEVELS[li][1]} <span className="text-gray-500 font-normal">· eco points</span></p>
+          <div className="h-1.5 bg-gray-100 rounded-full mt-1.5">
+            <div className="h-1.5 bg-green-700 rounded-full"
+              style={{ width: (next ? Math.round(((points - LEVELS[li][0]) / (next[0] - LEVELS[li][0])) * 100) : 100) + '%' }} />
+          </div>
+          <p className="text-[11px] text-gray-500 mt-1">{next ? `${next[0] - points} points to ${next[1]}` : 'Top level reached'}</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-4 gap-3">

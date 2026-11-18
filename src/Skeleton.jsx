@@ -1,4 +1,4 @@
-import { Inbox } from 'lucide-react'
+import { Leaf } from 'lucide-react'
 import Logo from './Logo'
 
 export function Skeleton({ rows = 3 }) {
@@ -21,7 +21,7 @@ export function Skeleton({ rows = 3 }) {
 export function Empty({ title, text }) {
   return (
     <div className="bg-white rounded-xl shadow p-8 text-center">
-      <Inbox size={32} strokeWidth={1.5} className="mx-auto text-gray-400 mb-2" />
+      <div className="mx-auto mb-3 w-16 h-16 rounded-full bg-green-100 text-green-700 flex items-center justify-center"><Leaf size={28} strokeWidth={1.5} /></div>
       <p className="font-semibold text-gray-800">{title}</p>
       <p className="text-sm text-gray-500 mt-1">{text}</p>
     </div>

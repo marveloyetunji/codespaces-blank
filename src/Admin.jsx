@@ -215,16 +215,23 @@ export default function Admin() {
 
       {loaded && page === 'overview' && (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Stat label="Awaiting review" value={n((r) => r.status === 'pending')} tone="text-amber-700" />
-            <Stat label="Approved, not assigned" value={n((r) => r.status === 'approved')} tone="text-teal-700" />
-            <Stat label="With collectors" value={n((r) => ['assigned', 'in_progress'].includes(r.status))} tone="text-blue-700" />
-            <Stat label="Collected" value={n((r) => r.status === 'collected')} tone="text-green-700" />
+          <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
+            <p className="px-3 pt-3 pb-2 font-semibold text-green-700">Needs your attention</p>
+            {[
+              ['Awaiting review', n((r) => r.status === 'pending'), 'pending'],
+              ['Approved, waiting for a collector', n((r) => r.status === 'approved'), 'approved'],
+              ['Overdue', n(isOverdue), ''],
+            ].map(([label, count, status]) => (
+              <button key={label} onClick={() => { setFStatus(status); setView('active'); setPage('reports') }}
+                className="w-full flex items-center justify-between px-3 py-3 text-left">
+                <span className="text-sm text-gray-800">{label}</span>
+                <span className={`text-sm font-bold px-2 py-0.5 rounded-full ${count ? 'bg-amber-50 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>{count}</span>
+              </button>
+            ))}
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Stat label="Overdue" value={n(isOverdue)} tone={n(isOverdue) ? 'text-red-600' : undefined} />
-            <Stat label="Rejected" value={n((r) => r.status === 'rejected')} />
-          </div>
+          <p className="text-sm text-gray-600">
+            {n((r) => ['assigned', 'in_progress'].includes(r.status))} with collectors · {n((r) => r.status === 'collected')} collected · {n((r) => r.status === 'rejected')} rejected
+          </p>
 
           <div className="bg-white border border-gray-200 rounded-xl p-3">
             <p className="font-semibold text-green-700 mb-2">Collector performance</p>
