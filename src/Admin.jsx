@@ -19,10 +19,11 @@ const STYLE = {
   in_progress: 'bg-orange-50 text-orange-700',
   collected: 'bg-green-100 text-green-800',
   rejected: 'bg-red-50 text-red-700',
+  cancelled: 'bg-gray-100 text-gray-600',
 }
-const HEX = { pending: '#d97706', approved: '#0d9488', assigned: '#2563eb', in_progress: '#ea580c', collected: '#2E9B47', rejected: '#9ca3af' }
+const HEX = { pending: '#d97706', approved: '#0d9488', assigned: '#2563eb', in_progress: '#ea580c', collected: '#2E9B47', rejected: '#9ca3af', cancelled: '#9ca3af' }
 const LABEL = (s) => (s === 'pending' ? 'Submitted' : s.replace('_', ' '))
-const isClosed = (r) => ['collected', 'rejected'].includes(r.status)
+const isClosed = (r) => ['collected', 'rejected', 'cancelled'].includes(r.status)
 
 function Stat({ label, value, tone }) {
   return (
@@ -88,6 +89,8 @@ function ReportRow({ r, collectors, reload }) {
           {r.proof_url && <img src={r.proof_url} alt="Proof of collection" className="w-full h-36 object-cover rounded-lg" />}
           {r.status === 'rejected'
             ? <p className="text-xs text-red-700">Rejected: {r.rejection_reason}</p>
+            : r.status === 'cancelled'
+            ? <p className="text-xs text-gray-700">Cancelled by resident: {r.cancel_reason}</p>
             : <Timeline r={r} />}
           {r.rating && <p className="text-xs text-gray-600">Resident rating: <b>{r.rating} of 5</b></p>}
         </div>
@@ -191,7 +194,7 @@ export default function Admin() {
   })
   const hotspots = Object.values(cells).map((c) => ({ ...c, lat: c.lat / c.n, lng: c.lng / c.n })).sort((a, b) => b.n - a.n)
 
-  const onMap = reports.filter((r) => r.status !== 'rejected')
+  const onMap = reports.filter((r) => !['rejected', 'cancelled'].includes(r.status))
   const center = onMap[0] ? [onMap[0].lat, onMap[0].lng] : [9.08, 8.67]
 
   return (

@@ -2,7 +2,7 @@
 export function exportCsv(reports, nameOf) {
   const cols = [
     'created_at', 'waste_type', 'quantity', 'description', 'address', 'lat', 'lng',
-    'status', 'preferred_date', 'preferred_slot', 'assigned_to', 'collected_at', 'photo_url', 'proof_url',
+    'status', 'cancel_reason', 'preferred_date', 'preferred_slot', 'assigned_to', 'collected_at', 'photo_url', 'proof_url',
   ]
   const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"'
   const rows = reports.map((r) =>

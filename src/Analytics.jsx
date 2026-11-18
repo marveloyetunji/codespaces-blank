@@ -1,4 +1,5 @@
 export default function Analytics({ reports }) {
+  reports = reports.filter((r) => r.status !== 'cancelled')
   const total = reports.length
   const collected = reports.filter((r) => r.status === 'collected')
   const rate = total ? Math.round((collected.length / total) * 100) : 0

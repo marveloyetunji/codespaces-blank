@@ -105,7 +105,7 @@ export default function Schedule() {
   }, [load])
 
   const today = todayStr()
-  const open = reports.filter((r) => !['collected', 'rejected'].includes(r.status))
+  const open = reports.filter((r) => !['collected', 'rejected', 'cancelled'].includes(r.status))
   const upcoming = open.filter((r) => r.preferred_date && r.preferred_date >= today)
     .sort((a, b) => a.preferred_date.localeCompare(b.preferred_date))
   const missed = open.filter((r) => r.preferred_date && r.preferred_date < today)
