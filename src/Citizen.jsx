@@ -4,7 +4,9 @@ import { supabase } from './supabaseClient'
 import SectionTabs from './SectionTabs'
 import Timeline from './Timeline'
 import Track from './Track'
+import HomeMap from './HomeMap'
 import Impact from './Impact'
+import BeforeAfter from './BeforeAfter'
 import { Skeleton, Empty } from './Skeleton'
 import { isUrgent, isOverdue } from './priority'
 
@@ -50,74 +52,90 @@ function ReportCard({ r, full, reload }) {
   }
 
   const late = isOverdue(r)
+  const urgent = isUrgent(r)
+  const badge = `px-2 py-1 rounded text-xs font-semibold ${STYLE[r.status]}`
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2"
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden"
       style={late ? { borderLeft: '4px solid #d97706' } : undefined}>
-      <div className="flex gap-3">
-        {r.photo_url
-          ? <img src={r.photo_url} alt="" className="w-14 h-14 object-cover rounded-lg" />
-          : <div className="w-14 h-14 rounded-lg bg-green-100 text-green-700 flex items-center justify-center"><Recycle size={22} /></div>}
-        <div className="flex-1 min-w-0 text-sm">
-          <p className="font-semibold">
-            {r.waste_type}
-            {isUrgent(r) && <span className="ml-2 text-[10px] bg-red-600 text-white px-1.5 py-0.5 rounded">URGENT</span>}
-          </p>
-          <p className="text-gray-500 truncate">{r.address}</p>
-          <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs ${STYLE[r.status]}`}>{LABEL(r.status)}</span>
-          {late && <p className="text-xs text-amber-700 mt-1">Taking longer than usual.</p>}
+      {r.photo_url && (
+        <div className="relative h-36 bg-green-100">
+          <img src={r.photo_url} alt="" className="w-full h-full object-cover" />
+          <span className={`absolute top-2 left-2 shadow-sm ${badge}`}>{LABEL(r.status)}</span>
+          {urgent && (
+            <span className="absolute top-2 right-2 text-[10px] font-semibold bg-red-600 text-white px-2 py-1 rounded">URGENT</span>
+          )}
         </div>
-        {r.proof_url && <img src={r.proof_url} alt="Collected" className="w-14 h-14 object-cover rounded-lg border-2 border-green-700" />}
-      </div>
-
-      {full && (
-        <>
-          {r.status === 'rejected' && <p className="text-xs text-red-700">Rejected: {r.rejection_reason}</p>}
-          {r.status === 'cancelled' && <p className="text-xs text-gray-600">Cancelled: {r.cancel_reason}</p>}
-          {!['rejected', 'cancelled'].includes(r.status) && <Timeline r={r} />}
-          {r.status === 'collected' && (
-            r.rating
-              ? <p className="text-xs text-gray-600">Your rating: <b>{r.rating} of 5</b></p>
-              : <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500 mr-1">Rate this service</span>
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <button key={n} onClick={() => rate(n)} aria-label={`${n} stars`} className="text-amber-500 p-0.5">
-                      <Star size={20} />
-                    </button>
-                  ))}
-                </div>
-          )}
-        </>
       )}
 
-      {['pending', 'approved'].includes(r.status) && !cancelling && (
-        <button onClick={() => { setCancelling(true); setErr('') }} className="text-xs text-red-600 underline">
-          Cancel report
-        </button>
-      )}
-
-      {cancelling && (
-        <div className="space-y-2 border-t border-gray-100 pt-2">
-          <p className="text-xs font-medium text-gray-700">Why are you cancelling?</p>
-          <select className="field !p-2 text-sm" value={sel} onChange={(e) => setSel(e.target.value)}>
-            {REASONS.map((x) => <option key={x}>{x}</option>)}
-          </select>
-          {sel === 'Other' && (
-            <input className="field !p-2 text-sm" placeholder="Write your reason" maxLength={200}
-              value={other} onChange={(e) => setOther(e.target.value)} />
+      <div className="p-3 space-y-2">
+        <div className="flex gap-3 items-start">
+          {!r.photo_url && (
+            <div className="w-12 h-12 rounded-lg bg-green-100 text-green-700 flex items-center justify-center shrink-0">
+              <Recycle size={22} />
+            </div>
           )}
-          <div className="flex gap-2">
-            <button onClick={confirmCancel} disabled={busy}
-              className="flex-1 bg-red-600 text-white rounded-lg py-2 text-sm font-semibold disabled:opacity-50">
-              {busy ? 'Cancelling...' : 'Confirm cancel'}
-            </button>
-            <button onClick={() => { setCancelling(false); setErr('') }} disabled={busy}
-              className="flex-1 border border-gray-300 text-gray-600 rounded-lg py-2 text-sm">Keep report</button>
+          <div className="flex-1 min-w-0 text-sm">
+            <p className="font-semibold">
+              {r.waste_type}
+              {!r.photo_url && urgent && <span className="ml-2 text-[10px] bg-red-600 text-white px-1.5 py-0.5 rounded">URGENT</span>}
+            </p>
+            <p className="text-gray-500 truncate">{r.address}</p>
+            {!r.photo_url && <span className={`inline-block mt-1 ${badge}`}>{LABEL(r.status)}</span>}
+            {late && <p className="text-xs text-amber-700 mt-1">Taking longer than usual.</p>}
           </div>
         </div>
-      )}
 
-      {err && <p className="text-xs text-red-600">{err}</p>}
+        {full && (
+          <>
+            {r.status === 'rejected' && <p className="text-xs text-red-700">Rejected: {r.rejection_reason}</p>}
+            {r.status === 'cancelled' && <p className="text-xs text-gray-600">Cancelled: {r.cancel_reason}</p>}
+            {r.status === 'collected' && <BeforeAfter r={r} />}
+            {!['rejected', 'cancelled'].includes(r.status) && <Timeline r={r} />}
+            {r.status === 'collected' && (
+              r.rating
+                ? <p className="text-xs text-gray-600">Your rating: <b>{r.rating} of 5</b></p>
+                : <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500 mr-1">Rate this service</span>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button key={n} onClick={() => rate(n)} aria-label={`${n} stars`} className="text-amber-500 p-0.5">
+                        <Star size={20} />
+                      </button>
+                    ))}
+                  </div>
+            )}
+          </>
+        )}
+
+        {['pending', 'approved'].includes(r.status) && !cancelling && (
+          <button onClick={() => { setCancelling(true); setErr('') }} className="text-xs text-red-600 underline">
+            Cancel report
+          </button>
+        )}
+
+        {cancelling && (
+          <div className="space-y-2 border-t border-gray-100 pt-2">
+            <p className="text-xs font-medium text-gray-700">Why are you cancelling?</p>
+            <select className="field !p-2 text-sm" value={sel} onChange={(e) => setSel(e.target.value)}>
+              {REASONS.map((x) => <option key={x}>{x}</option>)}
+            </select>
+            {sel === 'Other' && (
+              <input className="field !p-2 text-sm" placeholder="Write your reason" maxLength={200}
+                value={other} onChange={(e) => setOther(e.target.value)} />
+            )}
+            <div className="flex gap-2">
+              <button onClick={confirmCancel} disabled={busy}
+                className="flex-1 bg-red-600 text-white rounded-lg py-2 text-sm font-semibold disabled:opacity-50">
+                {busy ? 'Cancelling...' : 'Confirm cancel'}
+              </button>
+              <button onClick={() => { setCancelling(false); setErr('') }} disabled={busy}
+                className="flex-1 border border-gray-300 text-gray-600 rounded-lg py-2 text-sm">Keep report</button>
+            </div>
+          </div>
+        )}
+
+        {err && <p className="text-xs text-red-600">{err}</p>}
+      </div>
     </div>
   )
 }
@@ -148,6 +166,7 @@ export default function Citizen({ view = 'home', go, name }) {
   let li = 0
   LEVELS.forEach((l, i) => { if (points >= l[0]) li = i })
   const next = LEVELS[li + 1]
+  const pct = next ? Math.round(((points - LEVELS[li][0]) / (next[0] - LEVELS[li][0])) * 100) : 100
 
   if (view === 'history') {
     const list = reports.filter((r) => (tab === 'done' ? isClosed(r) : !isClosed(r)))
@@ -180,8 +199,7 @@ export default function Citizen({ view = 'home', go, name }) {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold">{LEVELS[li][1]} <span className="text-gray-500 font-normal">· eco points</span></p>
           <div className="h-1.5 bg-gray-100 rounded-full mt-1.5">
-            <div className="h-1.5 bg-green-700 rounded-full"
-              style={{ width: (next ? Math.round(((points - LEVELS[li][0]) / (next[0] - LEVELS[li][0])) * 100) : 100) + '%' }} />
+            <div className="h-1.5 bg-green-700 rounded-full" style={{ width: pct + '%' }} />
           </div>
           <p className="text-[11px] text-gray-500 mt-1">{next ? `${next[0] - points} points to ${next[1]}` : 'Top level reached'}</p>
         </div>
@@ -197,6 +215,8 @@ export default function Citizen({ view = 'home', go, name }) {
           </button>
         ))}
       </div>
+
+      <HomeMap reports={reports} />
 
       <Track reports={reports} />
 

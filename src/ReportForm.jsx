@@ -57,6 +57,9 @@ export default function ReportForm({ onDone }) {
   const [msg, setMsg] = useState('')
   const [locating, setLocating] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [done, setDone] = useState(false)
+  const redirect = useRef(null)
+  useEffect(() => () => clearTimeout(redirect.current), [])
   const preview = useMemo(() => (photo ? URL.createObjectURL(photo) : null), [photo])
   const watch = useRef({ id: null, timer: null })
 
@@ -145,11 +148,30 @@ export default function ReportForm({ onDone }) {
         preferred_date: date || null, preferred_slot: date ? (slot || null) : null,
       })
       if (error) throw error
-      onDone()
+      setBusy(false)
+      setDone(true)
+      if (navigator.vibrate) navigator.vibrate([60, 40, 60])
+      redirect.current = setTimeout(onDone, 2500)
     } catch (err) {
       setMsg(err.message || 'Could not submit. Check your connection and try again.')
       setBusy(false)
     }
+  }
+
+  if (done) {
+    return (
+      <div className="max-w-md mx-auto text-center pt-16 space-y-4">
+        <div className="success-pop mx-auto w-24 h-24 rounded-full bg-green-700 flex items-center justify-center">
+          <svg viewBox="0 0 24 24" className="w-12 h-12" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <path className="success-draw" d="M5 12.5l4.5 4.5L19 7.5" />
+          </svg>
+        </div>
+        <h1 className="text-xl font-bold text-gray-900">Report received</h1>
+        <p className="text-sm text-gray-600">The admin will review it. You will get a notification at each step.</p>
+        <button onClick={() => { clearTimeout(redirect.current); onDone() }}
+          className="w-full bg-green-700 text-white rounded-lg py-3 font-semibold">View my reports</button>
+      </div>
+    )
   }
 
   const a = accuracyText(acc, manual)

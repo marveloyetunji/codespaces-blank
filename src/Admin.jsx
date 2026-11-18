@@ -5,6 +5,7 @@ import { Search, Download, Flame, ChevronDown, ChevronUp, Recycle } from 'lucide
 import { supabase } from './supabaseClient'
 import Analytics from './Analytics'
 import Timeline from './Timeline'
+import BeforeAfter from './BeforeAfter'
 import SectionTabs from './SectionTabs'
 import LocateControl from './LocateControl'
 import { Skeleton, Empty } from './Skeleton'
@@ -86,7 +87,7 @@ function ReportRow({ r, collectors, reload }) {
         <div className="space-y-2 text-sm">
           {r.quantity && <p className="text-gray-700">Quantity: {r.quantity}</p>}
           {r.description && <p className="text-gray-700">{r.description}</p>}
-          {r.proof_url && <img src={r.proof_url} alt="Proof of collection" className="w-full h-36 object-cover rounded-lg" />}
+          <BeforeAfter r={r} />
           {r.status === 'rejected'
             ? <p className="text-xs text-red-700">Rejected: {r.rejection_reason}</p>
             : r.status === 'cancelled'

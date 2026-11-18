@@ -22,3 +22,14 @@ body { background: #F6F9F6; color: #1C2420; -webkit-tap-highlight-color: transpa
 input, select, textarea { font-size: 16px !important; }
 button, label { cursor: pointer; }
 .leaflet-container { z-index: 0; }
+
+
+/* success animation */
+.success-pop { animation: successPop .45s ease-out both; }
+.success-draw { stroke-dasharray: 24; stroke-dashoffset: 24; animation: successDraw .4s .3s ease-out forwards; }
+@keyframes successPop { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes successDraw { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .success-pop { animation: none; }
+  .success-draw { animation: none; stroke-dashoffset: 0; }
+}
