@@ -35,7 +35,7 @@ function ReportCard({ r, full, reload }) {
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2"
-      style={isOverdue(r) ? { borderLeft: '4px solid #dc2626' } : undefined}>
+      style={isOverdue(r) ? { borderLeft: '4px solid #d97706' } : undefined}>
       <div className="flex gap-3">
         {r.photo_url
           ? <img src={r.photo_url} alt="" className="w-14 h-14 object-cover rounded-lg" />
@@ -47,6 +47,7 @@ function ReportCard({ r, full, reload }) {
           </p>
           <p className="text-gray-500 truncate">{r.address}</p>
           <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs capitalize ${STYLE[r.status]}`}>{LABEL(r.status)}</span>
+          {isOverdue(r) && <p className="text-xs text-amber-700 mt-1">Taking longer than usual.</p>}
         </div>
         {r.proof_url && <img src={r.proof_url} alt="Collected" className="w-14 h-14 object-cover rounded-lg border-2 border-green-700" />}
       </div>
