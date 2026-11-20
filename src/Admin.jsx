@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, CircleMarker, Circle, Popup } from 'react-leaf
 import 'leaflet/dist/leaflet.css'
 import { Search, Download, Flame, ChevronDown, ChevronUp, Recycle } from 'lucide-react'
 import { supabase } from './supabaseClient'
+import { buzz } from './haptic'
 import Analytics from './Analytics'
 import Timeline from './Timeline'
 import BeforeAfter from './BeforeAfter'
@@ -47,7 +48,7 @@ function ReportRow({ r, collectors, reload }) {
     const { error } = await supabase.from('reports').update(patch).eq('id', r.id)
     setBusy(false)
     if (error) setErr(error.message)
-    else { setRejecting(false); setReason(''); reload() }
+    else { buzz(); setRejecting(false); setReason(''); reload() }
   }
 
   const assign = (id) =>
@@ -61,11 +62,17 @@ function ReportRow({ r, collectors, reload }) {
   const collector = collectors.find((c) => c.id === r.assigned_to)
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2"
+    <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2 overflow-hidden"
       style={isOverdue(r) ? { borderLeft: '4px solid #dc2626' } : undefined}>
+      {r.photo_url && (
+        <div className="relative -mx-3 -mt-3 h-36 bg-green-100">
+          <img src={r.photo_url} alt="" className="w-full h-full object-cover" />
+          <span className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-semibold capitalize shadow-sm ${STYLE[r.status]}`}>{LABEL(r.status)}</span>
+        </div>
+      )}
       <div className="flex gap-3">
         {r.photo_url
-          ? <img src={r.photo_url} alt="" className="w-14 h-14 object-cover rounded-lg" />
+          ? null
           : <div className="w-14 h-14 rounded-lg bg-green-100 text-green-700 flex items-center justify-center"><Recycle size={22} /></div>}
         <div className="flex-1 min-w-0 text-sm">
           <p className="font-semibold">

@@ -1,11 +1,11 @@
-import { Leaf } from 'lucide-react'
 import Logo from './Logo'
+import Illustration from './Illustration'
 
 export function Skeleton({ rows = 3 }) {
   return (
     <div className="space-y-3">
       {[...Array(rows)].map((_, i) => (
-        <div key={i} className="bg-white p-3 rounded-xl shadow flex gap-3 animate-pulse">
+        <div key={i} className="bg-white border border-gray-200 p-3 rounded-xl flex gap-3 animate-pulse">
           <div className="w-16 h-16 bg-gray-200 rounded-lg" />
           <div className="flex-1 space-y-2 py-1">
             <div className="h-3 bg-gray-200 rounded w-1/2" />
@@ -20,9 +20,9 @@ export function Skeleton({ rows = 3 }) {
 
 export function Empty({ title, text }) {
   return (
-    <div className="bg-white rounded-xl shadow p-8 text-center">
-      <div className="mx-auto mb-3 w-16 h-16 rounded-full bg-green-100 text-green-700 flex items-center justify-center"><Leaf size={28} strokeWidth={1.5} /></div>
-      <p className="font-semibold text-gray-800">{title}</p>
+    <div className="bg-white border border-gray-200 rounded-xl p-6 text-center">
+      <Illustration />
+      <p className="font-semibold text-gray-800 mt-2">{title}</p>
       <p className="text-sm text-gray-500 mt-1">{text}</p>
     </div>
   )
@@ -30,9 +30,9 @@ export function Empty({ title, text }) {
 
 export function Splash() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-green-700">
-      <Logo size={56} />
-      <p className="mt-3 font-semibold text-white tracking-wide">EcoTrack</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+      <Logo size={56} dark />
+      <p className="mt-3 font-bold text-gray-900 tracking-wide">EcoTrack</p>
     </div>
   )
 }

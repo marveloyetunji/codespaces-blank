@@ -71,7 +71,7 @@ export default function App() {
       <Toaster role={role} />
       <InstallBanner />
 
-      <main className="p-4">
+      <main key={tab} className="p-4 screen-in">
         {role === 'citizen' && tab === 'home' && <Citizen view="home" go={setTab} name={profile.name} />}
         {role === 'citizen' && tab === 'history' && <Citizen view="history" go={setTab} />}
         {role === 'citizen' && tab === 'schedule' && <Schedule />}

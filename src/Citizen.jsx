@@ -6,6 +6,8 @@ import Timeline from './Timeline'
 import Track from './Track'
 import HomeMap from './HomeMap'
 import Impact from './Impact'
+import Community from './Community'
+import { buzz } from './haptic'
 import BeforeAfter from './BeforeAfter'
 import { Skeleton, Empty } from './Skeleton'
 import { isUrgent, isOverdue } from './priority'
@@ -48,7 +50,7 @@ function ReportCard({ r, full, reload }) {
 
   const rate = async (n) => {
     const { error } = await supabase.rpc('rate_report', { p_id: r.id, p_rating: n })
-    if (error) setErr(error.message); else reload()
+    if (error) setErr(error.message); else { buzz(); reload() }
   }
 
   const late = isOverdue(r)
@@ -221,6 +223,8 @@ export default function Citizen({ view = 'home', go, name }) {
       <Track reports={reports} />
 
       <Impact reports={live} />
+
+      <Community />
 
       <div className="flex items-center justify-between">
         <h2 className="font-semibold text-green-700">Recent reports</h2>

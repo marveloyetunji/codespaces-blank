@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Navigation, Camera, Play, Recycle, MapPin } from 'lucide-react'
 import { supabase } from './supabaseClient'
+import { buzz } from './haptic'
 import { compressImage } from './compressImage'
 import { distKm, fmtKm, getPos } from './geo'
 import { isUrgent, isOverdue } from './priority'
@@ -39,7 +40,7 @@ function Job({ j, pos, onChanged }) {
     setBusy(true); setErr('')
     const { error } = await supabase.from('reports').update({ status: 'in_progress' }).eq('id', j.id)
     setBusy(false)
-    if (error) setErr(error.message); else onChanged()
+    if (error) setErr(error.message); else { buzz(); onChanged() }
   }
 
   const finish = async (file) => {
@@ -60,6 +61,7 @@ function Job({ j, pos, onChanged }) {
       const proof_url = supabase.storage.from('waste-photos').getPublicUrl(path).data.publicUrl
       const { error } = await supabase.from('reports').update({ status: 'collected', proof_url }).eq('id', j.id)
       if (error) throw error
+      buzz([60, 40, 60])
       onChanged()
     } catch (e) {
       setErr(e.message || 'Could not complete. Check your connection and try again.')
@@ -68,11 +70,17 @@ function Job({ j, pos, onChanged }) {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2"
+    <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2 overflow-hidden"
       style={isOverdue(j) ? { borderLeft: '4px solid #dc2626' } : undefined}>
+      {j.photo_url && (
+        <div className="relative -mx-3 -mt-3 h-36 bg-green-100">
+          <img src={j.photo_url} alt="" className="w-full h-full object-cover" />
+          <span className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-semibold capitalize shadow-sm ${STYLE[j.status]}`}>{LABEL(j.status)}</span>
+        </div>
+      )}
       <div className="flex gap-3">
         {j.photo_url
-          ? <img src={j.photo_url} alt="" className="w-16 h-16 object-cover rounded-lg" />
+          ? null
           : <div className="w-16 h-16 rounded-lg bg-green-100 text-green-700 flex items-center justify-center"><Recycle size={24} /></div>}
         <div className="flex-1 min-w-0 text-sm">
           <p className="font-semibold">

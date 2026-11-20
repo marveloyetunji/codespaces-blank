@@ -1,4 +1,4 @@
-import { Leaf } from 'lucide-react'
+import Illustration from './Illustration'
 
 export default function SectionTabs({ view, setView, active, done, loaded = true }) {
   const count = view === 'active' ? active : done
@@ -15,11 +15,9 @@ export default function SectionTabs({ view, setView, active, done, loaded = true
         ))}
       </div>
       {loaded && count === 0 && (
-        <div className="text-center py-10">
-          <div className="mx-auto mb-3 w-16 h-16 rounded-full bg-green-100 text-green-700 flex items-center justify-center">
-            <Leaf size={28} strokeWidth={1.5} />
-          </div>
-          <p className="font-semibold text-gray-800">
+        <div className="text-center py-8">
+          <Illustration />
+          <p className="font-semibold text-gray-800 mt-2">
             {view === 'active' ? 'Nothing open right now' : 'Nothing closed yet'}
           </p>
           <p className="text-sm text-gray-500 mt-1">
