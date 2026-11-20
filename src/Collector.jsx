@@ -1,16 +1,16 @@
 import { useEffect, useState, useCallback } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Navigation, Camera, Play, Recycle, MapPin } from 'lucide-react'
+import { Recycle, MapPin, ChevronRight } from 'lucide-react'
 import { supabase } from './supabaseClient'
-import { buzz } from './haptic'
-import { compressImage } from './compressImage'
-import { distKm, fmtKm, getPos } from './geo'
+import { distKm, fmtKm } from './geo'
 import { isUrgent, isOverdue } from './priority'
 import { fmtPref } from './schedule'
 import Timeline from './Timeline'
 import SectionTabs from './SectionTabs'
 import LocateControl from './LocateControl'
+import JobActions from './JobActions'
+import TaskDetail from './TaskDetail'
 import { Skeleton, Empty } from './Skeleton'
 
 const STYLE = {
@@ -30,105 +30,52 @@ function Stat({ label, value }) {
   )
 }
 
-function Job({ j, pos, onChanged }) {
-  const [busy, setBusy] = useState(false)
-  const [err, setErr] = useState('')
+function Job({ j, pos, onChanged, onOpen }) {
   const away = pos ? distKm(pos.lat, pos.lng, j.lat, j.lng) : null
-
-  const start = async () => {
-    if (busy) return
-    setBusy(true); setErr('')
-    const { error } = await supabase.from('reports').update({ status: 'in_progress' }).eq('id', j.id)
-    setBusy(false)
-    if (error) setErr(error.message); else { buzz(); onChanged() }
-  }
-
-  const finish = async (file) => {
-    if (!file || busy) return
-    setBusy(true); setErr('')
-    try {
-      const here = await getPos()
-      const dist = distKm(here.lat, here.lng, j.lat, j.lng)
-      if (dist > 0.1 + Math.min(here.acc, 100) / 1000) {
-        throw new Error('You are ' + fmtKm(dist) + ' from this report. Move within 100 m to mark it collected.')
-      }
-      const { data: u } = await supabase.auth.getUser()
-      const path = `${u.user.id}/proof-${Date.now()}.jpg`
-      const { error: upErr } = await supabase.storage
-        .from('waste-photos')
-        .upload(path, await compressImage(file), { contentType: 'image/jpeg' })
-      if (upErr) throw upErr
-      const proof_url = supabase.storage.from('waste-photos').getPublicUrl(path).data.publicUrl
-      const { error } = await supabase.from('reports').update({ status: 'collected', proof_url }).eq('id', j.id)
-      if (error) throw error
-      buzz([60, 40, 60])
-      onChanged()
-    } catch (e) {
-      setErr(e.message || 'Could not complete. Check your connection and try again.')
-    }
-    setBusy(false)
-  }
+  const chip = `px-2 py-1 rounded text-xs font-semibold capitalize ${STYLE[j.status]}`
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2 overflow-hidden"
       style={isOverdue(j) ? { borderLeft: '4px solid #dc2626' } : undefined}>
-      {j.photo_url && (
-        <div className="relative -mx-3 -mt-3 h-36 bg-green-100">
-          <img src={j.photo_url} alt="" className="w-full h-full object-cover" />
-          <span className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-semibold capitalize shadow-sm ${STYLE[j.status]}`}>{LABEL(j.status)}</span>
-        </div>
-      )}
-      <div className="flex gap-3">
-        {j.photo_url
-          ? null
-          : <div className="w-16 h-16 rounded-lg bg-green-100 text-green-700 flex items-center justify-center"><Recycle size={24} /></div>}
-        <div className="flex-1 min-w-0 text-sm">
-          <p className="font-semibold">
-            {j.waste_type}
-            {isUrgent(j) && <span className="ml-2 text-[10px] bg-red-600 text-white px-1.5 py-0.5 rounded">URGENT</span>}
-            {isOverdue(j) && <span className="ml-1 text-[10px] bg-red-50 text-red-700 px-1.5 py-0.5 rounded">Overdue</span>}
-          </p>
-          <p className="text-gray-500">{j.address}</p>
-          {j.preferred_date && <p className="text-xs text-green-700">Preferred: {fmtPref(j)}</p>}
-          {j.quantity && <p className="text-gray-600 text-xs mt-0.5">Quantity: {j.quantity}</p>}
-          {j.description && <p className="text-gray-600 text-xs mt-0.5">{j.description}</p>}
-          <div className="flex items-center gap-2 mt-1">
-            <span className={`px-2 py-0.5 rounded text-xs capitalize ${STYLE[j.status]}`}>{LABEL(j.status)}</span>
-            {away !== null && j.status !== 'collected' && (
-              <span className="text-xs text-green-700 font-semibold flex items-center gap-0.5">
-                <MapPin size={12} />{fmtKm(away)} away
-              </span>
-            )}
+      <button type="button" onClick={onOpen} className="w-full text-left space-y-2">
+        {j.photo_url && (
+          <div className="relative -mx-3 -mt-3 h-36 bg-green-100">
+            <img src={j.photo_url} alt="" className="w-full h-full object-cover" />
+            <span className={`absolute top-2 left-2 shadow-sm ${chip}`}>{LABEL(j.status)}</span>
           </div>
+        )}
+        <div className="flex gap-3 items-center">
+          {!j.photo_url && (
+            <div className="w-14 h-14 rounded-lg bg-green-100 text-green-700 flex items-center justify-center shrink-0">
+              <Recycle size={24} />
+            </div>
+          )}
+          <div className="flex-1 min-w-0 text-sm">
+            <p className="font-semibold">
+              {j.waste_type}
+              {isUrgent(j) && <span className="ml-2 text-[10px] bg-red-600 text-white px-1.5 py-0.5 rounded">URGENT</span>}
+              {isOverdue(j) && <span className="ml-1 text-[10px] bg-red-50 text-red-700 px-1.5 py-0.5 rounded">Overdue</span>}
+            </p>
+            <p className="text-gray-500">{j.address}</p>
+            {j.preferred_date && <p className="text-xs text-green-700">Preferred: {fmtPref(j)}</p>}
+            {j.quantity && <p className="text-gray-600 text-xs mt-0.5">Quantity: {j.quantity}</p>}
+            {j.description && <p className="text-gray-600 text-xs mt-0.5">{j.description}</p>}
+            <div className="flex items-center gap-2 mt-1">
+              {!j.photo_url && <span className={chip}>{LABEL(j.status)}</span>}
+              {away !== null && j.status !== 'collected' && (
+                <span className="text-xs text-green-700 font-semibold flex items-center gap-0.5">
+                  <MapPin size={12} />{fmtKm(away)} away
+                </span>
+              )}
+            </div>
+          </div>
+          {j.proof_url && <img src={j.proof_url} alt="Collected" className="w-14 h-14 object-cover rounded-lg border-2 border-green-700" />}
+          <ChevronRight size={18} className="text-gray-400 shrink-0" />
         </div>
-        {j.proof_url && <img src={j.proof_url} alt="Collected" className="w-16 h-16 object-cover rounded-lg border-2 border-green-700" />}
-      </div>
+      </button>
 
-      {j.status !== 'collected' && (
-        <a href={`https://www.google.com/maps/dir/?api=1&destination=${j.lat},${j.lng}`}
-          target="_blank" rel="noreferrer"
-          className="flex items-center justify-center gap-2 border border-green-700 text-green-700 rounded-lg py-2 text-sm font-semibold">
-          <Navigation size={16} /> Navigate
-        </a>
-      )}
-
-      {j.status === 'assigned' && (
-        <button onClick={start} disabled={busy}
-          className="w-full bg-green-700 text-white rounded-lg py-3 font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
-          <Play size={16} /> {busy ? 'Starting...' : 'Start collection'}
-        </button>
-      )}
-
-      {j.status === 'in_progress' && (
-        <label className={`w-full bg-green-700 text-white rounded-lg py-3 font-semibold flex items-center justify-center gap-2 ${busy ? 'opacity-50' : ''}`}>
-          <Camera size={16} /> {busy ? 'Checking location and uploading...' : 'Take proof photo and complete'}
-          <input type="file" accept="image/*" capture="environment" className="hidden" disabled={busy}
-            onChange={(e) => { finish(e.target.files[0]); e.target.value = '' }} />
-        </label>
-      )}
-
+      <JobActions j={j} onChanged={onChanged} />
       {j.status === 'collected' && <Timeline r={j} />}
-      {err && <p className="text-xs text-red-600">{err}</p>}
     </div>
   )
 }
@@ -140,6 +87,7 @@ export default function Collector() {
   const [page, setPage] = useState('jobs')
   const [view, setView] = useState('active')
   const [pos, setPos] = useState(null)
+  const [sel, setSel] = useState(null)
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.from('reports').select('*').order('created_at', { ascending: false })
@@ -165,12 +113,19 @@ export default function Collector() {
     return () => navigator.geolocation.clearWatch(id)
   }, [])
 
+  const selected = sel ? jobs.find((j) => j.id === sel) : null
+  if (selected) {
+    return (
+      <TaskDetail j={selected} pos={pos} onChanged={load}
+        onBack={() => { setSel(null); window.scrollTo(0, 0) }} />
+    )
+  }
+
   const open = jobs.filter((j) => j.status !== 'collected')
   const done = jobs.filter((j) => j.status === 'collected')
   const dist = (j) => (pos ? distKm(pos.lat, pos.lng, j.lat, j.lng) : 0)
-  const list = view === 'done'
-    ? done
-    : [...open].sort((a, b) => (pos ? dist(a) - dist(b) : 0))
+  const list = view === 'done' ? done : [...open].sort((a, b) => (pos ? dist(a) - dist(b) : 0))
+  const openJob = (id) => { setSel(id); window.scrollTo(0, 0) }
 
   const rated = done.filter((j) => j.rating)
   const hrs = done.filter((j) => j.started_at && j.collected_at)
@@ -179,7 +134,7 @@ export default function Collector() {
   const center = open[0] ? [open[0].lat, open[0].lng] : pos ? [pos.lat, pos.lng] : [9.08, 8.67]
 
   return (
-    <div className="max-w-md mx-auto space-y-4">
+    <div className="max-w-md lg:max-w-2xl mx-auto space-y-4">
       <h1 className="text-xl font-bold text-gray-900">My jobs</h1>
 
       <div className="flex bg-white border border-gray-200 rounded-xl p-1 gap-1">
@@ -198,7 +153,7 @@ export default function Collector() {
         <div className="space-y-3">
           <SectionTabs view={view} setView={setView} loaded={loaded} active={open.length} done={done.length} />
           {jobs.length === 0 && <Empty title="No jobs yet" text="Jobs the admin assigns to you will appear here." />}
-          {list.map((j) => <Job key={j.id} j={j} pos={pos} onChanged={load} />)}
+          {list.map((j) => <Job key={j.id} j={j} pos={pos} onChanged={load} onOpen={() => openJob(j.id)} />)}
         </div>
       )}
 

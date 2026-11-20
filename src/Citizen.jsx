@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Recycle, Plus, ClipboardList, Bell, User, Star } from 'lucide-react'
+import { Recycle, Plus, ClipboardList, Bell, MapPin, Star } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import SectionTabs from './SectionTabs'
 import Timeline from './Timeline'
@@ -189,7 +189,7 @@ export default function Citizen({ view = 'home', go, name }) {
     ['report', Plus, 'Report'],
     ['history', ClipboardList, 'My reports'],
     ['alerts', Bell, 'Alerts'],
-    ['profile', User, 'Profile'],
+    ['nearby', MapPin, 'Nearby'],
   ]
 
   return (

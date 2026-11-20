@@ -13,6 +13,7 @@ import Admin from './Admin'
 import Collector from './Collector'
 import Users from './Users'
 import Profile from './Profile'
+import NearbyMap from './NearbyMap'
 import Onboarding from './Onboarding'
 import Schedule from './Schedule'
 import Bell from './Bell'
@@ -75,6 +76,7 @@ export default function App() {
         {role === 'citizen' && tab === 'home' && <Citizen view="home" go={setTab} name={profile.name} />}
         {role === 'citizen' && tab === 'history' && <Citizen view="history" go={setTab} />}
         {role === 'citizen' && tab === 'schedule' && <Schedule />}
+        {role === 'citizen' && tab === 'nearby' && <NearbyMap />}
         {role === 'citizen' && tab === 'report' && <ReportForm onDone={() => setTab('history')} />}
         {role === 'collector' && tab === 'home' && <Collector />}
         {role === 'admin' && tab === 'home' && <Admin />}
