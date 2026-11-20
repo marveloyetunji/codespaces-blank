@@ -134,6 +134,14 @@ function ReportRow({ r, collectors, reload }) {
         </select>
       )}
 
+      {r.status === 'assigned' && (
+        <p className="text-xs text-gray-600">{r.accepted_at ? 'Accepted by the collector.' : 'Waiting for the collector to accept.'}</p>
+      )}
+      {r.status === 'approved' && r.decline_reason && (
+        <p className="text-xs text-amber-700">
+          Declined by {(collectors.find((c) => c.id === r.declined_by) || {}).name || 'a collector'}: {r.decline_reason}. Assign another collector.
+        </p>
+      )}
       {err && <p className="text-xs text-red-600">{err}</p>}
     </div>
   )

@@ -37,6 +37,7 @@ export default function Toaster({ role }) {
           if (map.insert) push(map.insert)
         } else if (p.eventType === 'UPDATE') {
           if (p.old && p.old.status === p.new.status) return
+          if (p.new.status === 'approved' && p.old && p.old.status !== 'pending') return
           const msg = map[p.new.status]
           if (msg) push(msg)
           if (role === 'citizen' && p.new.status === 'collected') confetti()
