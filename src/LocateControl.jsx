@@ -4,7 +4,7 @@ import L from 'leaflet'
 import { LocateFixed } from 'lucide-react'
 import { youIcon } from './mapStyle'
 
-export default function LocateControl({ follow = false }) {
+export default function LocateControl({ follow = false, bottom = 30 }) {
   const map = useMap()
   const [pos, setPos] = useState(null)
   const btn = useRef(null)
@@ -39,7 +39,7 @@ export default function LocateControl({ follow = false }) {
       )}
       <button ref={btn} type="button" aria-label="My location"
         onClick={() => pos && map.flyTo([pos.lat, pos.lng], Math.max(map.getZoom(), 16))}
-        style={{ position: 'absolute', right: 12, bottom: 30, zIndex: 1000 }}
+        style={{ position: 'absolute', right: 12, bottom, zIndex: 1000, transition: 'bottom .22s ease' }}
         className="map-btn">
         <LocateFixed size={22} color={pos ? '#1a73e8' : '#6b7280'} />
       </button>

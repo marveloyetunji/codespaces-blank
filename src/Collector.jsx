@@ -11,6 +11,7 @@ import { fmtPref } from './schedule'
 import Timeline from './Timeline'
 import SectionTabs from './SectionTabs'
 import LocateControl from './LocateControl'
+import CollectorMap from './CollectorMap'
 import LocationBanner from './LocationBanner'
 import JobActions from './JobActions'
 import TaskDetail from './TaskDetail'
@@ -163,25 +164,7 @@ export default function Collector() {
       )}
 
       {loaded && page === 'map' && (
-        <div className="space-y-3">
-          <div className="h-[calc(100dvh-17rem)] min-h-[320px] rounded-xl overflow-hidden border border-gray-200">
-            <MapContainer maxZoom={19} key={open.length ? 'has' : 'none'} center={center}
-              zoom={open.length ? 13 : 6} className="h-full w-full">
-              <MapTiles />
-              <LocateControl follow={open.length === 0} />
-              {open.map((j) => (
-                <Marker key={j.id} position={[j.lat, j.lng]} icon={pinIcon(HEX[j.status])}>
-                  <Popup>
-                    {j.waste_type} · {LABEL(j.status)}<br />{j.address}<br />
-                    <a href={`https://www.google.com/maps/dir/?api=1&destination=${j.lat},${j.lng}`}
-                      target="_blank" rel="noreferrer">Get directions</a>
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
-          </div>
-          {open.length === 0 && <p className="text-sm text-gray-500">No open jobs to show.</p>}
-        </div>
+        <CollectorMap jobs={jobs} pos={pos} page={page} setPage={setPage} onOpen={openJob} />
       )}
 
       {loaded && page === 'stats' && (

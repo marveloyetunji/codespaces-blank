@@ -11,6 +11,7 @@ import Timeline from './Timeline'
 import BeforeAfter from './BeforeAfter'
 import SectionTabs from './SectionTabs'
 import LocateControl from './LocateControl'
+import AdminMap from './AdminMap'
 import { Skeleton, Empty } from './Skeleton'
 import { exportCsv } from './exportCsv'
 import { isUrgent, isOverdue } from './priority'
@@ -323,47 +324,8 @@ export default function Admin() {
       )}
 
       {loaded && page === 'map' && (
-        <div className="space-y-3">
-          <button onClick={() => setHeat(!heat)}
-            className="w-full bg-white border border-green-700 text-green-700 rounded-lg py-2 text-sm font-semibold flex items-center justify-center gap-2">
-            <Flame size={16} /> {heat ? 'Show report pins' : 'Show hotspot heatmap'}
-          </button>
-
-          {heat && (
-            <div className="bg-white border border-gray-200 rounded-xl p-3 text-sm space-y-1">
-              <p className="font-semibold text-green-700">Top hotspots (open reports)</p>
-              {hotspots.length === 0 && <p className="text-xs text-gray-500">No open reports.</p>}
-              {hotspots.slice(0, 3).map((h, i) => (
-                <p key={i}>{i + 1}. {h.address || 'Unknown area'} <b>({h.n})</b></p>
-              ))}
-            </div>
-          )}
-
-          <div className="h-[calc(100dvh-17rem)] min-h-[320px] rounded-xl overflow-hidden border border-gray-200">
-            <MapContainer maxZoom={19} key={onMap.length ? 'has' : 'none'} center={center}
-              zoom={onMap.length ? 13 : 6} className="h-full w-full">
-              <MapTiles />
-              <LocateControl follow={onMap.length === 0} />
-              {heat && hotspots.map((h, i) => (
-                <Circle key={i} center={[h.lat, h.lng]} radius={150 + Math.min(h.n, 10) * 60}
-                  pathOptions={{ stroke: false, fillColor: h.n >= 3 ? '#dc2626' : '#f97316', fillOpacity: 0.3 }} />
-              ))}
-              {onMap.map((r) => (
-                <Marker key={r.id} position={[r.lat, r.lng]} icon={pinIcon(HEX[r.status])}>
-                  <Popup>{r.waste_type} · {LABEL(r.status)}<br />{r.address}</Popup>
-                </Marker>
-              ))}
-            </MapContainer>
-          </div>
-
-          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-600">
-            {['pending', 'approved', 'assigned', 'in_progress', 'collected'].map((s) => (
-              <span key={s} className="flex items-center gap-1">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ background: HEX[s] }} />{LABEL(s)}
-              </span>
-            ))}
-          </div>
-        </div>
+        <AdminMap reports={reports} collectors={collectors} page={page} setPage={setPage}
+          onReports={(r) => { setFStatus(''); setFType(''); setFCol(''); setQ(r.address || ''); setView(isClosed(r) ? 'done' : 'active'); setPage('reports') }} />
       )}
     </div>
   )
