@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Circle, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, CircleMarker, Circle, Popup, Marker } from 'react-leaflet'
+import MapTiles from './MapTiles'
+import { pinIcon } from './mapStyle'
 import 'leaflet/dist/leaflet.css'
 import { Search, Download, Flame, ChevronDown, ChevronUp, Recycle } from 'lucide-react'
 import { supabase } from './supabaseClient'
@@ -337,20 +339,19 @@ export default function Admin() {
             </div>
           )}
 
-          <div className="h-[60vh] rounded-xl overflow-hidden border border-gray-200">
+          <div className="h-[calc(100dvh-17rem)] min-h-[320px] rounded-xl overflow-hidden border border-gray-200">
             <MapContainer maxZoom={19} key={onMap.length ? 'has' : 'none'} center={center}
               zoom={onMap.length ? 13 : 6} className="h-full w-full">
-              <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
-              <LocateControl />
+              <MapTiles />
+              <LocateControl follow={onMap.length === 0} />
               {heat && hotspots.map((h, i) => (
                 <Circle key={i} center={[h.lat, h.lng]} radius={150 + Math.min(h.n, 10) * 60}
                   pathOptions={{ stroke: false, fillColor: h.n >= 3 ? '#dc2626' : '#f97316', fillOpacity: 0.3 }} />
               ))}
               {onMap.map((r) => (
-                <CircleMarker key={r.id} center={[r.lat, r.lng]} radius={9}
-                  pathOptions={{ color: HEX[r.status], fillColor: HEX[r.status], fillOpacity: 0.85 }}>
+                <Marker key={r.id} position={[r.lat, r.lng]} icon={pinIcon(HEX[r.status])}>
                   <Popup>{r.waste_type} · {LABEL(r.status)}<br />{r.address}</Popup>
-                </CircleMarker>
+                </Marker>
               ))}
             </MapContainer>
           </div>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { TILE_URL, TILE_ATTR, TILE_NATIVE } from './mapStyle'
 
 const pin = L.divIcon({
   className: '',
@@ -11,8 +12,8 @@ const pin = L.divIcon({
 })
 
 const STREET = {
-  url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-  attr: '&copy; OpenStreetMap',
+  url: TILE_URL,
+  attr: TILE_ATTR,
 }
 const SAT = {
   url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -49,7 +50,7 @@ export default function LocationPicker({ lat, lng, acc, onMove }) {
     <div className="space-y-2">
       <div className="h-64 rounded-xl overflow-hidden border border-gray-200">
         <MapContainer center={[lat, lng]} zoom={17} maxZoom={19} className="h-full w-full">
-          <TileLayer key={sat ? 'sat' : 'street'} url={layer.url} attribution={layer.attr} maxZoom={19} />
+          <TileLayer key={sat ? 'sat' : 'street'} url={layer.url} attribution={layer.attr} maxNativeZoom={sat ? 19 : TILE_NATIVE} maxZoom={19} />
           {acc ? (
             <Circle center={[lat, lng]} radius={acc}
               pathOptions={{ color: '#2563eb', weight: 1, fillColor: '#2563eb', fillOpacity: 0.12 }} />

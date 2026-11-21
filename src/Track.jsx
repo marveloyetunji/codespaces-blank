@@ -1,4 +1,6 @@
-import { MapContainer, TileLayer, CircleMarker } from 'react-leaflet'
+import { MapContainer, TileLayer, CircleMarker, Marker } from 'react-leaflet'
+import MapTiles from './MapTiles'
+import { pinIcon } from './mapStyle'
 import 'leaflet/dist/leaflet.css'
 import { MapPin } from 'lucide-react'
 
@@ -35,9 +37,8 @@ export default function Track({ reports }) {
         <div className="h-36">
           <MapContainer center={[r.lat, r.lng]} zoom={16} maxZoom={19} className="h-full w-full"
             scrollWheelZoom={false} zoomControl={false}>
-            <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
-            <CircleMarker center={[r.lat, r.lng]} radius={10}
-              pathOptions={{ color: '#fff', weight: 3, fillColor: '#2E9B47', fillOpacity: 1 }} />
+            <MapTiles />
+            <Marker position={[r.lat, r.lng]} icon={pinIcon('#2E9B47')} />
           </MapContainer>
         </div>
       </div>

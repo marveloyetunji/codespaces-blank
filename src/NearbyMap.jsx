@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Circle, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, CircleMarker, Circle, Popup, Marker } from 'react-leaflet'
+import MapTiles from './MapTiles'
+import { pinIcon } from './mapStyle'
 import 'leaflet/dist/leaflet.css'
 import { RefreshCw } from 'lucide-react'
 import { supabase } from './supabaseClient'
@@ -70,19 +72,18 @@ export default function NearbyMap() {
           <div className="h-[55vh] rounded-xl overflow-hidden border border-gray-200">
             <MapContainer key={`${pos.lat},${pos.lng},${km}`} center={[pos.lat, pos.lng]}
               zoom={ZOOM[km]} maxZoom={19} className="h-full w-full">
-              <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
+              <MapTiles />
               <Circle center={[pos.lat, pos.lng]} radius={km * 1000}
                 pathOptions={{ color: '#2E9B47', weight: 1, fillColor: '#2E9B47', fillOpacity: 0.05 }} />
               <CircleMarker center={[pos.lat, pos.lng]} radius={8}
                 pathOptions={{ color: '#fff', weight: 3, fillColor: '#2563eb', fillOpacity: 1 }} />
               {rows.map((r, i) => (
-                <CircleMarker key={i} center={[r.lat, r.lng]} radius={9}
-                  pathOptions={{ color: '#fff', weight: 2, fillColor: HEX[r.status], fillOpacity: 0.95 }}>
+                <Marker key={i} position={[r.lat, r.lng]} icon={pinIcon(HEX[r.status])}>
                   <Popup>
                     {r.waste_type} · {LABEL[r.status]}<br />
                     Reported {new Date(r.created_at).toLocaleDateString('en', { day: 'numeric', month: 'short' })}
                   </Popup>
-                </CircleMarker>
+                </Marker>
               ))}
             </MapContainer>
           </div>

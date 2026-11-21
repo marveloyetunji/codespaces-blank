@@ -1,4 +1,6 @@
-import { MapContainer, TileLayer, CircleMarker } from 'react-leaflet'
+import { MapContainer, TileLayer, CircleMarker, Marker } from 'react-leaflet'
+import MapTiles from './MapTiles'
+import { pinIcon } from './mapStyle'
 import 'leaflet/dist/leaflet.css'
 import { ArrowLeft } from 'lucide-react'
 import Timeline from './Timeline'
@@ -61,9 +63,8 @@ export default function TaskDetail({ j, pos, onBack, onChanged }) {
         <MapContainer center={[j.lat, j.lng]} zoom={16} maxZoom={19} className="h-full w-full"
           dragging={false} touchZoom={false} doubleClickZoom={false} scrollWheelZoom={false}
           zoomControl={false} boxZoom={false} keyboard={false}>
-          <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
-          <CircleMarker center={[j.lat, j.lng]} radius={10}
-            pathOptions={{ color: '#fff', weight: 3, fillColor: '#2E9B47', fillOpacity: 1 }} />
+          <MapTiles />
+          <Marker position={[j.lat, j.lng]} icon={pinIcon('#2E9B47')} />
           {pos && (
             <CircleMarker center={[pos.lat, pos.lng]} radius={7}
               pathOptions={{ color: '#fff', weight: 3, fillColor: '#2563eb', fillOpacity: 1 }} />

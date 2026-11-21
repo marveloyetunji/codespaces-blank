@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap, Marker } from 'react-leaflet'
+import MapTiles from './MapTiles'
+import { pinIcon } from './mapStyle'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -31,13 +33,12 @@ export default function HomeMap({ reports }) {
         <MapContainer center={pts[0]} zoom={15} maxZoom={19} className="h-full w-full"
           dragging={false} touchZoom={false} doubleClickZoom={false} scrollWheelZoom={false}
           zoomControl={false} boxZoom={false} keyboard={false}>
-          <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
+          <MapTiles />
           <Fit pts={pts} />
           {list.map((r) => (
-            <CircleMarker key={r.id} center={[r.lat, r.lng]} radius={9}
-              pathOptions={{ color: '#fff', weight: 2, fillColor: HEX[r.status], fillOpacity: 1 }}>
+            <Marker key={r.id} position={[r.lat, r.lng]} icon={pinIcon(HEX[r.status])}>
               <Popup>{r.waste_type} · {LABEL[r.status]}<br />{r.address}</Popup>
-            </CircleMarker>
+            </Marker>
           ))}
         </MapContainer>
       </div>

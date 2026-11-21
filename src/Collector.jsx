@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, CircleMarker, Popup, Marker } from 'react-leaflet'
+import MapTiles from './MapTiles'
+import { pinIcon } from './mapStyle'
 import 'leaflet/dist/leaflet.css'
 import { Recycle, MapPin, ChevronRight } from 'lucide-react'
 import { supabase } from './supabaseClient'
@@ -162,20 +164,19 @@ export default function Collector() {
 
       {loaded && page === 'map' && (
         <div className="space-y-3">
-          <div className="h-[60vh] rounded-xl overflow-hidden border border-gray-200">
+          <div className="h-[calc(100dvh-17rem)] min-h-[320px] rounded-xl overflow-hidden border border-gray-200">
             <MapContainer maxZoom={19} key={open.length ? 'has' : 'none'} center={center}
               zoom={open.length ? 13 : 6} className="h-full w-full">
-              <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
-              <LocateControl />
+              <MapTiles />
+              <LocateControl follow={open.length === 0} />
               {open.map((j) => (
-                <CircleMarker key={j.id} center={[j.lat, j.lng]} radius={10}
-                  pathOptions={{ color: HEX[j.status], fillColor: HEX[j.status], fillOpacity: 0.85 }}>
+                <Marker key={j.id} position={[j.lat, j.lng]} icon={pinIcon(HEX[j.status])}>
                   <Popup>
                     {j.waste_type} · {LABEL(j.status)}<br />{j.address}<br />
                     <a href={`https://www.google.com/maps/dir/?api=1&destination=${j.lat},${j.lng}`}
                       target="_blank" rel="noreferrer">Get directions</a>
                   </Popup>
-                </CircleMarker>
+                </Marker>
               ))}
             </MapContainer>
           </div>
