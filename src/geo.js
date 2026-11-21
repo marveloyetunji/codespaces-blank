@@ -1,3 +1,4 @@
+import { geoMessage } from './address'
 // Haversine distance in km between two GPS points
 export function distKm(lat1, lng1, lat2, lng2) {
   const R = 6371
@@ -20,7 +21,7 @@ export const getPos = () =>
     if (!navigator.geolocation) return reject(new Error('Location is not supported on this device'))
     navigator.geolocation.getCurrentPosition(
       (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }),
-      () => reject(new Error('Turn on location to verify the collection')),
+      (e) => reject(Object.assign(new Error(geoMessage(e.code)), { code: e.code })),
       { enableHighAccuracy: true, timeout: 15000 }
     )
   })

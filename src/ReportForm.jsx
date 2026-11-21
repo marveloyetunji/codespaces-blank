@@ -3,23 +3,10 @@ import { MapPin, Camera, ArrowLeft } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { compressImage } from './compressImage'
 import { todayStr, SLOTS, fmtDate } from './schedule'
+import { getAddress, geoMessage } from './address'
 import LocationPicker from './LocationPicker'
 
 const TYPES = ['Household', 'Plastic', 'Glass', 'Paper', 'Organic', 'Electronic', 'Construction', 'Hazardous', 'Other']
-
-async function getAddress(lat, lng) {
-  const coords = `${lat.toFixed(5)}, ${lng.toFixed(5)}`
-  const key = import.meta.env.VITE_BIGDATACLOUD_KEY
-  const url = key
-    ? `https://api-bdc.net/data/reverse-geocode?latitude=${lat}&longitude=${lng}&localityLanguage=en&key=${key}`
-    : `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
-  try {
-    const d = await (await fetch(url)).json()
-    return [d.locality, d.city, d.principalSubdivision].filter(Boolean).join(', ') || coords
-  } catch {
-    return coords
-  }
-}
 
 function Line({ label, value }) {
   return (
@@ -36,10 +23,7 @@ function accuracyText(acc, manual) {
   const n = Math.round(acc)
   if (acc <= 20) return { text: `Good signal, accurate to about ${n} m.`, tone: 'text-green-700' }
   if (acc <= 50) return { text: `Fair signal, about ${n} m. Check the pin is on the right spot.`, tone: 'text-amber-700' }
-  return {
-    text: `Weak signal, about ${n} m. Move the pin to the exact spot, or try again outside.`,
-    tone: 'text-red-600',
-  }
+  return { text: `Weak signal, about ${n} m. Move the pin to the exact spot, or try again outside.`, tone: 'text-red-600' }
 }
 
 export default function ReportForm({ onDone }) {
@@ -48,6 +32,9 @@ export default function ReportForm({ onDone }) {
   const [acc, setAcc] = useState(null)
   const [manual, setManual] = useState(false)
   const [address, setAddress] = useState('')
+  const [precise, setPrecise] = useState(true)
+  const [finding, setFinding] = useState(false)
+  const [landmark, setLandmark] = useState('')
   const [type, setType] = useState(TYPES[0])
   const [quantity, setQuantity] = useState('')
   const [desc, setDesc] = useState('')
@@ -58,10 +45,10 @@ export default function ReportForm({ onDone }) {
   const [locating, setLocating] = useState(false)
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
-  const redirect = useRef(null)
-  useEffect(() => () => clearTimeout(redirect.current), [])
   const preview = useMemo(() => (photo ? URL.createObjectURL(photo) : null), [photo])
   const watch = useRef({ id: null, timer: null })
+  const addrReq = useRef(0)
+  const redirect = useRef(null)
 
   const stopWatch = () => {
     if (watch.current.id != null) navigator.geolocation.clearWatch(watch.current.id)
@@ -69,6 +56,15 @@ export default function ReportForm({ onDone }) {
     watch.current = { id: null, timer: null }
   }
   useEffect(() => stopWatch, [])
+  useEffect(() => () => clearTimeout(redirect.current), [])
+
+  const lookup = useCallback(async (lat, lng) => {
+    const id = ++addrReq.current
+    setFinding(true)
+    const a = await getAddress(lat, lng)
+    if (id !== addrReq.current) return
+    setAddress(a.text); setPrecise(a.precise); setFinding(false)
+  }, [])
 
   const locate = () => {
     if (!navigator.geolocation) return setMsg('This device does not support location.')
@@ -76,10 +72,10 @@ export default function ReportForm({ onDone }) {
     setLocating(true); setMsg(''); setManual(false)
     let best = null
 
-    const finish = async () => {
+    const finish = () => {
       stopWatch()
       setLocating(false)
-      if (best) setAddress(await getAddress(best.lat, best.lng))
+      if (best) lookup(best.lat, best.lng)
     }
 
     watch.current.id = navigator.geolocation.watchPosition(
@@ -96,25 +92,29 @@ export default function ReportForm({ onDone }) {
         if (best) return finish()
         stopWatch()
         setLocating(false)
-        setMsg(e.code === 1
-          ? 'Location is blocked. Allow it in your browser settings and try again.'
-          : 'Could not get your location. Move to an open area and try again.')
+        setMsg(geoMessage(e.code))
       },
       { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
     )
     watch.current.timer = setTimeout(finish, 12000)
   }
 
-  const moveTo = useCallback(async (lat, lng) => {
+  const moveTo = useCallback((lat, lng) => {
     setLoc({ lat, lng })
     setManual(true)
     setAcc(null)
-    setAddress(await getAddress(lat, lng))
-  }, [])
+    lookup(lat, lng)
+  }, [lookup])
+
+  const fullAddress = [landmark.trim(), address].filter(Boolean).join(', ')
 
   const review = (e) => {
     e.preventDefault()
     if (!loc) return setMsg('Tap "Use my location" first.')
+    if (finding) return setMsg('Still finding the address. Wait a moment.')
+    if (!precise && !landmark.trim()) {
+      return setMsg('We could only find your town. Add a street or nearest landmark so the collector can find the spot.')
+    }
     if (date && date < todayStr()) return setMsg('Choose today or a later date.')
     setMsg('')
     setStep('confirm')
@@ -142,7 +142,7 @@ export default function ReportForm({ onDone }) {
         photo_url = supabase.storage.from('waste-photos').getPublicUrl(path).data.publicUrl
       }
       const { error } = await supabase.from('reports').insert({
-        photo_url, lat: loc.lat, lng: loc.lng, address,
+        photo_url, lat: loc.lat, lng: loc.lng, address: fullAddress,
         waste_type: type, description: desc.trim(),
         quantity: quantity.trim() || null,
         preferred_date: date || null, preferred_slot: date ? (slot || null) : null,
@@ -187,7 +187,7 @@ export default function ReportForm({ onDone }) {
         <div className="bg-white border border-gray-200 rounded-xl px-3">
           <Line label="Waste type" value={type} />
           {quantity.trim() && <Line label="Quantity" value={quantity.trim()} />}
-          <Line label="Location" value={address} />
+          <Line label="Location" value={fullAddress} />
           <Line label="Position" value={manual ? 'Placed by hand' : acc != null ? `GPS, about ${Math.round(acc)} m` : 'GPS'} />
           {desc.trim() && <Line label="Description" value={desc.trim()} />}
           {date && <Line label="Preferred date" value={fmtDate(date) + (slot ? ', ' + slot : '')} />}
@@ -218,8 +218,22 @@ export default function ReportForm({ onDone }) {
         </button>
         {loc && <LocationPicker lat={loc.lat} lng={loc.lng} acc={acc} onMove={moveTo} />}
         {a && <p className={`text-xs ${a.tone}`}>{a.text}</p>}
-        {address && <p className="text-sm text-gray-600">{address}</p>}
+        {loc && finding && <p className="text-sm text-gray-500">Finding the address...</p>}
+        {loc && !finding && address && <p className="text-sm text-gray-600">{address}</p>}
+        {loc && !finding && !precise && (
+          <p className="text-xs text-amber-700">Only the town was found. The pin is exact, but please add a street or landmark below.</p>
+        )}
       </div>
+
+      {loc && (
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-gray-700">
+            Street or nearest landmark{!precise && <span className="text-red-600"> (needed)</span>}
+          </p>
+          <input className="field" maxLength={120} placeholder="e.g. Opposite Methodist Church, Isale Oja"
+            value={landmark} onChange={(e) => setLandmark(e.target.value)} />
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">

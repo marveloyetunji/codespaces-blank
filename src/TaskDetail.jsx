@@ -50,6 +50,7 @@ export default function TaskDetail({ j, pos, onBack, onChanged }) {
         <Row label="Waste type" value={j.waste_type} />
         <Row label="Quantity" value={j.quantity} />
         <Row label="Address" value={j.address} />
+        <Row label="Coordinates" value={`${j.lat.toFixed(5)}, ${j.lng.toFixed(5)}`} />
         <Row label="Description" value={j.description} />
         <Row label="Preferred date" value={fmtPref(j)} />
         <Row label="Reported" value={new Date(j.created_at).toLocaleString('en', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} />

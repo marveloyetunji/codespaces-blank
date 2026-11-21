@@ -92,6 +92,7 @@ function ReportRow({ r, collectors, reload }) {
 
       {open && (
         <div className="space-y-2 text-sm">
+          <p className="text-xs text-gray-500">Coordinates: {r.lat.toFixed(5)}, {r.lng.toFixed(5)}</p>
           {r.quantity && <p className="text-gray-700">Quantity: {r.quantity}</p>}
           {r.description && <p className="text-gray-700">{r.description}</p>}
           <BeforeAfter r={r} />

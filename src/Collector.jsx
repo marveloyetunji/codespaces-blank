@@ -9,6 +9,7 @@ import { fmtPref } from './schedule'
 import Timeline from './Timeline'
 import SectionTabs from './SectionTabs'
 import LocateControl from './LocateControl'
+import LocationBanner from './LocationBanner'
 import JobActions from './JobActions'
 import TaskDetail from './TaskDetail'
 import { Skeleton, Empty } from './Skeleton'
@@ -136,6 +137,8 @@ export default function Collector() {
   return (
     <div className="max-w-md lg:max-w-2xl mx-auto space-y-4">
       <h1 className="text-xl font-bold text-gray-900">My jobs</h1>
+
+      <LocationBanner />
 
       <div className="flex bg-white border border-gray-200 rounded-xl p-1 gap-1">
         {[['jobs', 'Jobs'], ['map', 'Map'], ['stats', 'Stats']].map(([k, label]) => (

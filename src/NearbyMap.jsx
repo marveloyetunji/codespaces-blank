@@ -20,7 +20,7 @@ export default function NearbyMap() {
   const locate = useCallback(async () => {
     setLocating(true); setErr('')
     try { setPos(await getPos()) }
-    catch { setErr('Allow location to see reports near you, then tap refresh.') }
+    catch (e) { setErr(e.message || 'Allow location to see reports near you, then tap refresh.') }
     setLocating(false)
   }, [])
 
