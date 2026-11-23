@@ -60,3 +60,17 @@ button, label { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .slide-card { animation: none; } }
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+
+/* design v2 */
+@theme {
+  --font-display: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  --color-forest: #0B3D2E;
+  --color-sun: #F5B335;
+}
+.field {
+  width: 100%; padding: .8rem .9rem; background: #FAFBF9; border-radius: 14px;
+  border: 1.5px solid #DCE4DD; box-shadow: none;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.field:focus { outline: none; background: #fff; border-color: #2E9B47; box-shadow: 0 0 0 4px rgba(46,155,71,.16); }
