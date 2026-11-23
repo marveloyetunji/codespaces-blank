@@ -74,3 +74,11 @@ button, label { cursor: pointer; }
   transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
 }
 .field:focus { outline: none; background: #fff; border-color: #2E9B47; box-shadow: 0 0 0 4px rgba(46,155,71,.16); }
+
+
+/* design v2 phase 2 */
+.rounded-xl { border-radius: .875rem !important; }
+.rounded-2xl { border-radius: 1.125rem !important; }
+.rounded-3xl { border-radius: 1.5rem !important; }
+h1, h2 { font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif; letter-spacing: -0.01em; }
+.lift { box-shadow: 0 8px 24px rgba(11,61,46,.12); }

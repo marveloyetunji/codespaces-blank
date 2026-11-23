@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Recycle, Plus, ClipboardList, Bell, MapPin, Star } from 'lucide-react'
+import { Recycle, Star, Plus, CalendarDays, MapPin, ClipboardList, ChevronRight } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import SectionTabs from './SectionTabs'
 import Timeline from './Timeline'
@@ -7,10 +7,10 @@ import Track from './Track'
 import HomeMap from './HomeMap'
 import Impact from './Impact'
 import Community from './Community'
-import { buzz } from './haptic'
 import BeforeAfter from './BeforeAfter'
 import { Skeleton, Empty } from './Skeleton'
 import { isUrgent, isOverdue } from './priority'
+import { buzz } from './haptic'
 
 const STYLE = {
   pending: 'bg-amber-50 text-amber-700',
@@ -55,17 +55,17 @@ function ReportCard({ r, full, reload }) {
 
   const late = isOverdue(r)
   const urgent = isUrgent(r)
-  const badge = `px-2 py-1 rounded text-xs font-semibold ${STYLE[r.status]}`
+  const badge = `px-2.5 py-1 rounded-full text-xs font-semibold ${STYLE[r.status]}`
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden"
+    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden"
       style={late ? { borderLeft: '4px solid #d97706' } : undefined}>
       {r.photo_url && (
         <div className="relative h-36 bg-green-100">
           <img src={r.photo_url} alt="" className="w-full h-full object-cover" />
           <span className={`absolute top-2 left-2 shadow-sm ${badge}`}>{LABEL(r.status)}</span>
           {urgent && (
-            <span className="absolute top-2 right-2 text-[10px] font-semibold bg-red-600 text-white px-2 py-1 rounded">URGENT</span>
+            <span className="absolute top-2 right-2 text-[10px] font-semibold bg-red-600 text-white px-2 py-1 rounded-full">URGENT</span>
           )}
         </div>
       )}
@@ -73,14 +73,14 @@ function ReportCard({ r, full, reload }) {
       <div className="p-3 space-y-2">
         <div className="flex gap-3 items-start">
           {!r.photo_url && (
-            <div className="w-12 h-12 rounded-lg bg-green-100 text-green-700 flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-green-100 text-green-700 flex items-center justify-center shrink-0">
               <Recycle size={22} />
             </div>
           )}
           <div className="flex-1 min-w-0 text-sm">
             <p className="font-semibold">
               {r.waste_type}
-              {!r.photo_url && urgent && <span className="ml-2 text-[10px] bg-red-600 text-white px-1.5 py-0.5 rounded">URGENT</span>}
+              {!r.photo_url && urgent && <span className="ml-2 text-[10px] bg-red-600 text-white px-1.5 py-0.5 rounded-full">URGENT</span>}
             </p>
             <p className="text-gray-500 truncate">{r.address}</p>
             {!r.photo_url && <span className={`inline-block mt-1 ${badge}`}>{LABEL(r.status)}</span>}
@@ -174,7 +174,7 @@ export default function Citizen({ view = 'home', go, name }) {
     const list = reports.filter((r) => (tab === 'done' ? isClosed(r) : !isClosed(r)))
     return (
       <div className="max-w-md mx-auto space-y-3">
-        <h1 className="text-xl font-bold text-gray-900">My reports</h1>
+        <h1 className="text-2xl font-extrabold text-gray-900">My reports</h1>
         <SectionTabs view={tab} setView={setTab} loaded={loaded}
           active={reports.filter((r) => !isClosed(r)).length}
           done={reports.filter(isClosed).length} />
@@ -185,59 +185,86 @@ export default function Citizen({ view = 'home', go, name }) {
     )
   }
 
+  const hr = new Date().getHours()
+  const greet = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening'
+  const first = (name || 'there').split(' ')[0]
+  const open = reports.filter((r) => !isClosed(r)).length
+  const summary = !loaded ? ' '
+    : open
+      ? `You have ${open} open report${open === 1 ? '' : 's'}. We will tell you at every step.`
+      : 'No open reports. Spot waste near you? Report it in a minute.'
+
   const tiles = [
-    ['report', Plus, 'Report'],
-    ['history', ClipboardList, 'My reports'],
-    ['alerts', Bell, 'Alerts'],
+    ['schedule', CalendarDays, 'Schedule'],
     ['nearby', MapPin, 'Nearby'],
+    ['history', ClipboardList, 'My reports'],
   ]
 
   return (
-    <div className="max-w-md mx-auto space-y-5">
-      <p className="text-sm text-gray-500">Hello, {(name || 'there').split(' ')[0]}</p>
+    <div className="-mx-4 -mt-4">
+      <div className="bg-forest text-white px-5 pt-3 pb-16">
+        <div className="max-w-md mx-auto">
+          <p className="text-sm text-white/70">{greet}</p>
+          <h1 className="text-[26px] leading-tight font-extrabold">{first}</h1>
+          <p className="text-sm text-white/80 mt-1 min-h-[20px]">{summary}</p>
 
-      <div className="bg-white border border-gray-200 rounded-xl p-3 flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full bg-green-100 text-green-800 flex items-center justify-center font-bold">{points}</div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold">{LEVELS[li][1]} <span className="text-gray-500 font-normal">· eco points</span></p>
-          <div className="h-1.5 bg-gray-100 rounded-full mt-1.5">
-            <div className="h-1.5 bg-green-700 rounded-full" style={{ width: pct + '%' }} />
+          <div className="mt-5 flex items-center gap-3 bg-white/10 rounded-2xl p-3">
+            <div className="w-11 h-11 rounded-full bg-sun text-forest font-extrabold flex items-center justify-center">{points}</div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold">{LEVELS[li][1]} <span className="text-white/60 font-normal">· eco points</span></p>
+              <div className="h-1.5 bg-white/20 rounded-full mt-1.5">
+                <div className="h-1.5 bg-sun rounded-full" style={{ width: pct + '%' }} />
+              </div>
+              <p className="text-[11px] text-white/70 mt-1">{next ? `${next[0] - points} points to ${next[1]}` : 'Top level reached'}</p>
+            </div>
           </div>
-          <p className="text-[11px] text-gray-500 mt-1">{next ? `${next[0] - points} points to ${next[1]}` : 'Top level reached'}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
-        {tiles.map(([key, Icon, label]) => (
-          <button key={key} onClick={() => go(key)} className="flex flex-col items-center gap-1.5">
-            <span className="w-12 h-12 rounded-lg bg-white border border-green-700 text-green-700 flex items-center justify-center">
-              <Icon size={22} />
-            </span>
-            <span className="text-[11px] text-gray-700">{label}</span>
-          </button>
-        ))}
-      </div>
+      <div className="max-w-md mx-auto px-4 -mt-10 space-y-5 pb-2">
+        <button onClick={() => go('report')}
+          className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 text-left lift">
+          <span className="w-12 h-12 rounded-xl bg-green-700 text-white flex items-center justify-center shrink-0">
+            <Plus size={26} />
+          </span>
+          <span className="flex-1">
+            <span className="block font-display font-bold text-gray-900">Report waste</span>
+            <span className="block text-sm text-gray-500">Photo, place, done. About a minute.</span>
+          </span>
+          <ChevronRight size={20} className="text-gray-400" />
+        </button>
 
-      <HomeMap reports={reports} />
+        <div className="grid grid-cols-3 gap-3">
+          {tiles.map(([key, Icon, label]) => (
+            <button key={key} onClick={() => go(key)}
+              className="bg-white border border-gray-200 rounded-2xl py-3 flex flex-col items-center gap-2">
+              <span className="w-10 h-10 rounded-full bg-green-100 text-green-800 flex items-center justify-center">
+                <Icon size={20} />
+              </span>
+              <span className="text-xs font-medium text-gray-700">{label}</span>
+            </button>
+          ))}
+        </div>
 
-      <Track reports={reports} />
+        {err && <p className="text-sm text-red-600">{err}</p>}
 
-      <Impact reports={live} />
+        <Track reports={reports} go={go} />
+        <HomeMap reports={reports} />
+        <Impact reports={live} />
+        <Community />
 
-      <Community />
-
-      <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-green-700">Recent reports</h2>
-        {reports.length > 3 && (
-          <button onClick={() => go('history')} className="text-sm text-gray-500">See all</button>
+        <div className="flex items-center justify-between">
+          <h2 className="font-display font-bold text-gray-900">Recent reports</h2>
+          {reports.length > 3 && (
+            <button onClick={() => go('history')} className="text-sm font-medium text-green-700">See all</button>
+          )}
+        </div>
+        {!loaded && <Skeleton rows={2} />}
+        {loaded && reports.length === 0 && (
+          <Empty title="No reports yet" text="Tap Report waste above to send your first one." />
         )}
+        {reports.slice(0, 3).map((r) => <ReportCard key={r.id} r={r} reload={load} />)}
       </div>
-      {err && <p className="text-sm text-red-600">{err}</p>}
-      {!loaded && <Skeleton rows={2} />}
-      {loaded && reports.length === 0 && (
-        <Empty title="No reports yet" text="Tap the green button below to report waste near you." />
-      )}
-      {reports.slice(0, 3).map((r) => <ReportCard key={r.id} r={r} reload={load} />)}
     </div>
   )
 }

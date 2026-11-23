@@ -1,17 +1,51 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
-import { MapPin, Camera, ArrowLeft } from 'lucide-react'
+import { MapPin, Camera, ArrowLeft, RefreshCw, Home, Package, Wine, FileText, Leaf, Cpu, Hammer, ShieldAlert, Box } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { compressImage } from './compressImage'
 import { todayStr, SLOTS, fmtDate } from './schedule'
 import { getAddress, geoMessage } from './address'
 import LocationPicker from './LocationPicker'
 
-const TYPES = ['Household', 'Plastic', 'Glass', 'Paper', 'Organic', 'Electronic', 'Construction', 'Hazardous', 'Other']
+const TYPES = [
+  ['Household', Home], ['Plastic', Package], ['Glass', Wine], ['Paper', FileText], ['Organic', Leaf],
+  ['Electronic', Cpu], ['Construction', Hammer], ['Hazardous', ShieldAlert], ['Other', Box],
+]
+const STEPS = ['Photo', 'Place', 'Details', 'Review']
+const PRIMARY = 'w-full bg-green-700 text-white rounded-xl py-3.5 font-semibold disabled:opacity-50'
+
+function Progress({ step, onBack }) {
+  return (
+    <div className="flex items-center gap-3">
+      {onBack && (
+        <button type="button" onClick={onBack} aria-label="Back" className="p-1 -ml-1 text-gray-700">
+          <ArrowLeft size={22} />
+        </button>
+      )}
+      <div className="flex-1">
+        <p className="text-xs font-semibold text-gray-500 mb-1.5">Step {step + 1} of 4 · {STEPS[step]}</p>
+        <div className="flex gap-1.5">
+          {STEPS.map((s, i) => (
+            <span key={s} className={`h-1.5 flex-1 rounded-full ${i <= step ? 'bg-green-700' : 'bg-gray-200'}`} />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Heading({ title, text }) {
+  return (
+    <div>
+      <h1 className="text-2xl font-extrabold text-gray-900">{title}</h1>
+      <p className="text-sm text-gray-500 mt-1">{text}</p>
+    </div>
+  )
+}
 
 function Line({ label, value }) {
   return (
-    <div className="flex justify-between gap-4 text-sm py-2 border-b border-gray-100 last:border-0">
-      <span className="text-gray-500">{label}</span>
+    <div className="flex justify-between gap-4 text-sm py-2.5 border-b border-gray-100 last:border-0">
+      <span className="text-gray-500 shrink-0">{label}</span>
       <span className="text-gray-900 text-right">{value}</span>
     </div>
   )
@@ -26,8 +60,8 @@ function accuracyText(acc, manual) {
   return { text: `Weak signal, about ${n} m. Move the pin to the exact spot, or try again outside.`, tone: 'text-red-600' }
 }
 
-export default function ReportForm({ onDone }) {
-  const [step, setStep] = useState('form')
+export default function ReportForm({ onDone, onBack }) {
+  const [step, setStep] = useState(0)
   const [loc, setLoc] = useState(null)
   const [acc, setAcc] = useState(null)
   const [manual, setManual] = useState(false)
@@ -35,7 +69,7 @@ export default function ReportForm({ onDone }) {
   const [precise, setPrecise] = useState(true)
   const [finding, setFinding] = useState(false)
   const [landmark, setLandmark] = useState('')
-  const [type, setType] = useState(TYPES[0])
+  const [type, setType] = useState(TYPES[0][0])
   const [quantity, setQuantity] = useState('')
   const [desc, setDesc] = useState('')
   const [date, setDate] = useState('')
@@ -106,20 +140,23 @@ export default function ReportForm({ onDone }) {
     lookup(lat, lng)
   }, [lookup])
 
-  const fullAddress = [landmark.trim(), address].filter(Boolean).join(', ')
+  const goTo = (n) => { setStep(n); setMsg(''); window.scrollTo(0, 0) }
 
-  const review = (e) => {
-    e.preventDefault()
+  const fromPlace = () => {
     if (!loc) return setMsg('Tap "Use my location" first.')
     if (finding) return setMsg('Still finding the address. Wait a moment.')
     if (!precise && !landmark.trim()) {
       return setMsg('We could only find your town. Add a street or nearest landmark so the collector can find the spot.')
     }
-    if (date && date < todayStr()) return setMsg('Choose today or a later date.')
-    setMsg('')
-    setStep('confirm')
-    window.scrollTo(0, 0)
+    goTo(2)
   }
+
+  const fromDetails = () => {
+    if (date && date < todayStr()) return setMsg('Choose today or a later date.')
+    goTo(3)
+  }
+
+  const fullAddress = [landmark.trim(), address].filter(Boolean).join(', ')
 
   const submit = async () => {
     if (busy) return
@@ -166,124 +203,153 @@ export default function ReportForm({ onDone }) {
             <path className="success-draw" d="M5 12.5l4.5 4.5L19 7.5" />
           </svg>
         </div>
-        <h1 className="text-xl font-bold text-gray-900">Report received</h1>
+        <h1 className="text-2xl font-extrabold text-gray-900">Report received</h1>
         <p className="text-sm text-gray-600">The admin will review it. You will get a notification at each step.</p>
-        <button onClick={() => { clearTimeout(redirect.current); onDone() }}
-          className="w-full bg-green-700 text-white rounded-lg py-3 font-semibold">View my reports</button>
+        <button onClick={() => { clearTimeout(redirect.current); onDone() }} className={PRIMARY}>View my reports</button>
       </div>
     )
   }
 
   const a = accuracyText(acc, manual)
-
-  if (step === 'confirm') {
-    return (
-      <div className="max-w-md mx-auto space-y-4">
-        <div className="flex items-center gap-2">
-          <button onClick={() => setStep('form')} aria-label="Back" className="p-1 -ml-1"><ArrowLeft size={22} /></button>
-          <h1 className="text-xl font-bold text-gray-900">Confirm report</h1>
-        </div>
-        {preview && <img src={preview} alt="Waste" className="w-full h-44 object-cover rounded-xl" />}
-        <div className="bg-white border border-gray-200 rounded-xl px-3">
-          <Line label="Waste type" value={type} />
-          {quantity.trim() && <Line label="Quantity" value={quantity.trim()} />}
-          <Line label="Location" value={fullAddress} />
-          <Line label="Position" value={manual ? 'Placed by hand' : acc != null ? `GPS, about ${Math.round(acc)} m` : 'GPS'} />
-          {desc.trim() && <Line label="Description" value={desc.trim()} />}
-          {date && <Line label="Preferred date" value={fmtDate(date) + (slot ? ', ' + slot : '')} />}
-        </div>
-        {msg && <p className="text-sm text-red-600">{msg}</p>}
-        <button onClick={submit} disabled={busy}
-          className="w-full bg-green-700 text-white rounded-lg py-3 font-semibold disabled:opacity-50">
-          {busy ? 'Submitting...' : 'Confirm and submit'}
-        </button>
-        <button onClick={() => setStep('form')} disabled={busy}
-          className="w-full border border-green-700 text-green-700 rounded-lg py-3 font-semibold">
-          Edit details
-        </button>
-      </div>
-    )
-  }
+  const back = step > 0 ? () => goTo(step - 1) : onBack || null
 
   return (
-    <form onSubmit={review} className="max-w-md mx-auto space-y-5">
-      <h1 className="text-xl font-bold text-gray-900">Report waste</h1>
+    <div className="max-w-md mx-auto space-y-5">
+      <Progress step={step} onBack={back} />
 
-      <div className="space-y-2">
-        <p className="text-sm font-medium text-gray-700">Location</p>
-        <button type="button" onClick={locate} disabled={locating}
-          className="field flex items-center gap-2 text-left text-green-700 font-medium">
-          <MapPin size={18} />
-          {locating ? 'Finding the best signal...' : loc ? 'Refresh my location' : 'Use my location'}
-        </button>
-        {loc && <LocationPicker lat={loc.lat} lng={loc.lng} acc={acc} onMove={moveTo} />}
-        {a && <p className={`text-xs ${a.tone}`}>{a.text}</p>}
-        {loc && finding && <p className="text-sm text-gray-500">Finding the address...</p>}
-        {loc && !finding && address && <p className="text-sm text-gray-600">{address}</p>}
-        {loc && !finding && !precise && (
-          <p className="text-xs text-amber-700">Only the town was found. The pin is exact, but please add a street or landmark below.</p>
-        )}
-      </div>
+      {step === 0 && (
+        <>
+          <Heading title="What did you find?" text="Add a photo and choose the kind of waste." />
 
-      {loc && (
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700">
-            Street or nearest landmark{!precise && <span className="text-red-600"> (needed)</span>}
-          </p>
-          <input className="field" maxLength={120} placeholder="e.g. Opposite Methodist Church, Isale Oja"
-            value={landmark} onChange={(e) => setLandmark(e.target.value)} />
-        </div>
+          <label className="block rounded-2xl border-2 border-dashed border-green-700/40 bg-green-50 overflow-hidden cursor-pointer">
+            {preview ? (
+              <div className="relative">
+                <img src={preview} alt="Waste preview" className="w-full h-56 object-cover" />
+                <span className="absolute bottom-3 right-3 bg-white rounded-full px-3 py-1.5 text-sm font-semibold text-green-700 map-float flex items-center gap-1.5">
+                  <RefreshCw size={14} /> Retake
+                </span>
+              </div>
+            ) : (
+              <div className="h-44 flex flex-col items-center justify-center gap-2 text-green-700">
+                <span className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center"><Camera size={26} /></span>
+                <span className="font-semibold">Take a photo</span>
+                <span className="text-xs text-gray-500">Helps the collector find it and bring the right gear</span>
+              </div>
+            )}
+            <input type="file" accept="image/*" capture="environment" className="hidden"
+              onChange={(e) => setPhoto(e.target.files[0] || null)} />
+          </label>
+
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-gray-700">Type of waste</p>
+            <div className="grid grid-cols-3 gap-2">
+              {TYPES.map(([t, Icon]) => (
+                <button key={t} type="button" onClick={() => setType(t)}
+                  className={`flex flex-col items-center gap-1.5 rounded-2xl border-[1.5px] py-3 text-xs font-medium ${
+                    type === t ? 'border-green-700 bg-green-50 text-green-800' : 'border-gray-200 bg-white text-gray-600'}`}>
+                  <Icon size={22} /> {t}
+                </button>
+              ))}
+            </div>
+            {type === 'Hazardous' && (
+              <p className="text-xs text-red-600">Marked urgent automatically. Do not touch it, and report from a safe distance.</p>
+            )}
+          </div>
+
+          <button type="button" onClick={() => goTo(1)} className={PRIMARY}>Continue</button>
+        </>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700">Waste type</p>
-          <select className="field" value={type} onChange={(e) => setType(e.target.value)}>
-            {TYPES.map((t) => <option key={t}>{t}</option>)}
-          </select>
-        </div>
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700">Quantity</p>
-          <input className="field" placeholder="e.g. 2 bags" maxLength={40}
-            value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-        </div>
-      </div>
-      {type === 'Hazardous' && (
-        <p className="text-xs text-red-600 -mt-3">Hazardous reports are marked urgent automatically.</p>
+      {step === 1 && (
+        <>
+          <Heading title="Where is it?" text="Stand close to it, then fine-tune the pin on the map." />
+
+          <button type="button" onClick={locate} disabled={locating}
+            className={loc
+              ? 'w-full border-[1.5px] border-green-700 text-green-700 rounded-xl py-3 font-semibold flex items-center justify-center gap-2 disabled:opacity-50'
+              : PRIMARY + ' flex items-center justify-center gap-2'}>
+            <MapPin size={18} />
+            {locating ? 'Finding the best signal...' : loc ? 'Refresh my location' : 'Use my location'}
+          </button>
+
+          {loc && <LocationPicker lat={loc.lat} lng={loc.lng} acc={acc} onMove={moveTo} />}
+          {a && <p className={`text-xs ${a.tone}`}>{a.text}</p>}
+          {loc && finding && <p className="text-sm text-gray-500">Finding the address...</p>}
+          {loc && !finding && address && <p className="text-sm text-gray-700">{address}</p>}
+          {loc && !finding && !precise && (
+            <p className="text-xs text-amber-700">Only the town was found. The pin is exact, but please add a street or landmark below.</p>
+          )}
+
+          {loc && (
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-gray-700">
+                Street or nearest landmark{!precise && <span className="text-red-600"> (needed)</span>}
+              </p>
+              <input className="field" maxLength={120} placeholder="e.g. Opposite Methodist Church, Isale Oja"
+                value={landmark} onChange={(e) => setLandmark(e.target.value)} />
+            </div>
+          )}
+
+          {msg && <p className="text-sm text-red-600">{msg}</p>}
+          <button type="button" onClick={fromPlace} className={PRIMARY}>Continue</button>
+        </>
       )}
 
-      <div className="space-y-2">
-        <p className="text-sm font-medium text-gray-700">Description</p>
-        <textarea className="field" rows={3} placeholder="What is there and where exactly? (optional)"
-          value={desc} onChange={(e) => setDesc(e.target.value)} />
-      </div>
+      {step === 2 && (
+        <>
+          <Heading title="A few details" text="All optional, but they help the collector prepare." />
 
-      <div className="space-y-2">
-        <p className="text-sm font-medium text-gray-700">Preferred collection date (optional)</p>
-        <div className="grid grid-cols-2 gap-2">
-          <input type="date" className="field" min={todayStr()} value={date} onChange={(e) => setDate(e.target.value)} />
-          <select className="field" value={slot} onChange={(e) => setSlot(e.target.value)} disabled={!date}>
-            <option value="">Any time</option>
-            {Object.entries(SLOTS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
-        </div>
-      </div>
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-gray-700">How much?</p>
+            <input className="field" placeholder="e.g. 2 bags" maxLength={40}
+              value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+          </div>
 
-      <div className="space-y-2">
-        <p className="text-sm font-medium text-gray-700">Photo</p>
-        <label className="field flex items-center gap-2 text-green-700 font-medium">
-          <Camera size={18} /> {photo ? 'Retake photo' : 'Take or choose a photo'}
-          <input type="file" accept="image/*" capture="environment" className="hidden"
-            onChange={(e) => setPhoto(e.target.files[0] || null)} />
-        </label>
-        {preview && <img src={preview} alt="Preview" className="w-full h-40 object-cover rounded-lg" />}
-      </div>
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-gray-700">Anything else we should know?</p>
+            <textarea className="field" rows={3} placeholder="What is there and where exactly?"
+              value={desc} onChange={(e) => setDesc(e.target.value)} />
+          </div>
 
-      {msg && <p className="text-sm text-red-600">{msg}</p>}
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-gray-700">Preferred collection date</p>
+            <div className="grid grid-cols-2 gap-2">
+              <input type="date" className="field" min={todayStr()} value={date} onChange={(e) => setDate(e.target.value)} />
+              <select className="field" value={slot} onChange={(e) => setSlot(e.target.value)} disabled={!date}>
+                <option value="">Any time</option>
+                {Object.entries(SLOTS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </div>
+            <p className="text-xs text-gray-500">The admin decides who collects and when. This is only a request.</p>
+          </div>
 
-      <button className="w-full bg-green-700 text-white rounded-lg py-3 font-semibold">
-        Review report
-      </button>
-    </form>
+          {msg && <p className="text-sm text-red-600">{msg}</p>}
+          <button type="button" onClick={fromDetails} className={PRIMARY}>Review report</button>
+        </>
+      )}
+
+      {step === 3 && (
+        <>
+          <Heading title="Check and send" text="Make sure everything looks right." />
+          {preview && <img src={preview} alt="Waste" className="w-full h-44 object-cover rounded-2xl" />}
+          <div className="bg-white border border-gray-200 rounded-2xl px-4">
+            <Line label="Waste type" value={type} />
+            {quantity.trim() && <Line label="Quantity" value={quantity.trim()} />}
+            <Line label="Location" value={fullAddress} />
+            <Line label="Position" value={manual ? 'Placed by hand' : acc != null ? `GPS, about ${Math.round(acc)} m` : 'GPS'} />
+            {desc.trim() && <Line label="Notes" value={desc.trim()} />}
+            {date && <Line label="Preferred date" value={fmtDate(date) + (slot ? ', ' + slot : '')} />}
+          </div>
+          {msg && <p className="text-sm text-red-600">{msg}</p>}
+          <button type="button" onClick={submit} disabled={busy} className={PRIMARY}>
+            {busy ? 'Submitting...' : 'Confirm and submit'}
+          </button>
+          <button type="button" onClick={() => goTo(0)} disabled={busy}
+            className="w-full border-[1.5px] border-green-700 text-green-700 rounded-xl py-3.5 font-semibold">
+            Edit details
+          </button>
+        </>
+      )}
+    </div>
   )
 }

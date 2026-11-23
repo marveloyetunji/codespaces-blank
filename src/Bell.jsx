@@ -28,7 +28,7 @@ export default function Bell({ userId, onOpen }) {
     <button onClick={onOpen} aria-label="Notifications" className="ml-auto relative p-2">
       <BellIcon size={22} />
       {n > 0 && (
-        <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-green-700 text-white text-[11px] font-bold flex items-center justify-center">
+        <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-sun text-forest text-[11px] font-bold flex items-center justify-center">
           {n > 99 ? '99+' : n}
         </span>
       )}

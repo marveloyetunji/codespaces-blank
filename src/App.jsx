@@ -59,12 +59,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-green-50 pb-24">
-      <header className="bg-white border-b border-gray-200 px-4 pb-2 flex items-center gap-2 sticky top-0 z-[1100]"
+      <header className="bg-forest text-white px-4 pb-2 flex items-center gap-2 sticky top-0 z-[1100]"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)' }}>
-        <Logo size={30} dark />
+        <Logo size={30} />
         <div className="leading-tight">
-          <p className="font-bold text-gray-900">EcoTrack</p>
-          <p className="text-[11px] text-gray-500 capitalize">{role}</p>
+          <p className="font-display font-bold">EcoTrack</p>
+          <p className="text-[11px] text-white/70 capitalize">{role}</p>
         </div>
         <Bell userId={session.user.id} onOpen={() => setTab('alerts')} />
       </header>
@@ -77,7 +77,7 @@ export default function App() {
         {role === 'citizen' && tab === 'history' && <Citizen view="history" go={setTab} />}
         {role === 'citizen' && tab === 'schedule' && <Schedule />}
         {role === 'citizen' && tab === 'nearby' && <NearbyMap />}
-        {role === 'citizen' && tab === 'report' && <ReportForm onDone={() => setTab('history')} />}
+        {role === 'citizen' && tab === 'report' && <ReportForm onDone={() => setTab('history')} onBack={() => setTab('home')} />}
         {role === 'collector' && tab === 'home' && <Collector />}
         {role === 'admin' && tab === 'home' && <Admin />}
         {role === 'admin' && tab === 'users' && <Users />}
