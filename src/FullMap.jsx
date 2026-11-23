@@ -1,6 +1,8 @@
 import { useLayoutEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 
-// Fills the space between the app header and the bottom bar, and locks page scrolling.
+// Fills the space between the app header and the bottom bar.
+// Rendered straight into <body> so no parent can change what "fixed" means.
 export default function FullMap({ children }) {
   const [box, setBox] = useState({ top: 56, bottom: 56 })
 
@@ -28,9 +30,10 @@ export default function FullMap({ children }) {
     }
   }, [])
 
-  return (
+  return createPortal(
     <div style={{ position: 'fixed', left: 0, right: 0, top: box.top, bottom: box.bottom, zIndex: 900, background: '#F4F7F4' }}>
       {children}
-    </div>
+    </div>,
+    document.body
   )
 }
