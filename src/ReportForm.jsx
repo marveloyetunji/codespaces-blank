@@ -140,7 +140,7 @@ export default function ReportForm({ onDone, onBack }) {
     lookup(lat, lng)
   }, [lookup])
 
-  const goTo = (n) => { setStep(n); setMsg(''); window.scrollTo(0, 0) }
+  const goTo = (n) => { setStep(n); setMsg(''); document.getElementById('app-main')?.scrollTo(0, 0) }
 
   const fromPlace = () => {
     if (!loc) return setMsg('Tap "Use my location" first.')

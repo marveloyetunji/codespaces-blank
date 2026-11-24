@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Home, User, Truck, LayoutDashboard, Users as UsersIcon, ClipboardList, Bell as BellIcon, Plus, CalendarDays } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import Auth from './Auth'
@@ -13,11 +13,11 @@ import Admin from './Admin'
 import Collector from './Collector'
 import Users from './Users'
 import Profile from './Profile'
-import NearbyMap from './NearbyMap'
-import Onboarding from './Onboarding'
-import Schedule from './Schedule'
 import Bell from './Bell'
 import Notifications from './Notifications'
+import Onboarding from './Onboarding'
+import NearbyMap from './NearbyMap'
+import Schedule from './Schedule'
 
 const TABS = {
   citizen: [['home', Home, 'Home'], ['schedule', CalendarDays, 'Schedule'], ['report', Plus, 'Report', true], ['history', ClipboardList, 'Reports'], ['profile', User, 'Profile']],
@@ -34,6 +34,7 @@ export default function App() {
   const [seen, setSeen] = useState(() => {
     try { return localStorage.getItem('onboarded') === '1' } catch (e) { return true }
   })
+  const mainRef = useRef(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => { setSession(data.session); setReady(true) })
@@ -50,6 +51,10 @@ export default function App() {
       .then(({ data }) => setProfile(data))
   }, [session])
 
+  useEffect(() => {
+    if (mainRef.current) mainRef.current.scrollTo(0, 0)
+  }, [tab])
+
   if (recovering) return <ResetPassword onDone={() => setRecovering(false)} />
   if (!ready) return <Splash />
   if (!session) return seen ? <Auth /> : <Onboarding onDone={() => setSeen(true)} />
@@ -58,48 +63,45 @@ export default function App() {
   const role = TABS[profile.role] ? profile.role : 'citizen'
 
   return (
-    <div className="min-h-screen bg-green-50 pb-24">
-      <header className="bg-forest text-white px-4 pb-2 flex items-center gap-2 sticky top-0 z-[1100]"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)' }}>
-        <Logo size={30} />
-        <div className="leading-tight">
-          <p className="font-display font-bold">EcoTrack</p>
-          <p className="text-[11px] text-white/70 capitalize">{role}</p>
-        </div>
+    <div className="app-shell">
+      <header className="app-header">
+        <Logo size={28} />
+        <span className="font-display font-extrabold text-[17px] tracking-tight">EcoTrack</span>
+        <span className="role-chip">{role}</span>
         <Bell userId={session.user.id} onOpen={() => setTab('alerts')} />
       </header>
 
       <Toaster role={role} />
       <InstallBanner />
 
-      <main key={tab} className="p-4 screen-in">
-        {role === 'citizen' && tab === 'home' && <Citizen view="home" go={setTab} name={profile.name} />}
-        {role === 'citizen' && tab === 'history' && <Citizen view="history" go={setTab} />}
-        {role === 'citizen' && tab === 'schedule' && <Schedule />}
-        {role === 'citizen' && tab === 'nearby' && <NearbyMap />}
-        {role === 'citizen' && tab === 'report' && <ReportForm onDone={() => setTab('history')} onBack={() => setTab('home')} />}
-        {role === 'collector' && tab === 'home' && <Collector />}
-        {role === 'admin' && tab === 'home' && <Admin />}
-        {role === 'admin' && tab === 'users' && <Users />}
-        {tab === 'alerts' && <Notifications userId={session.user.id} />}
-        {tab === 'profile' && <Profile profile={profile} email={session.user.email} onSaved={setProfile} />}
+      <main id="app-main" ref={mainRef} className="app-main">
+        <div key={tab} className="screen-in">
+          {role === 'citizen' && tab === 'home' && <Citizen view="home" go={setTab} name={profile.name} />}
+          {role === 'citizen' && tab === 'history' && <Citizen view="history" go={setTab} />}
+          {role === 'citizen' && tab === 'schedule' && <Schedule />}
+          {role === 'citizen' && tab === 'nearby' && <NearbyMap />}
+          {role === 'citizen' && tab === 'report' && (
+            <ReportForm onDone={() => setTab('history')} onBack={() => setTab('home')} />
+          )}
+          {role === 'collector' && tab === 'home' && <Collector />}
+          {role === 'admin' && tab === 'home' && <Admin />}
+          {role === 'admin' && tab === 'users' && <Users />}
+          {tab === 'alerts' && <Notifications userId={session.user.id} />}
+          {tab === 'profile' && <Profile profile={profile} email={session.user.email} onSaved={setProfile} />}
+        </div>
       </main>
 
-      <nav className="fixed bottom-0 inset-x-0 z-[1100] bg-white border-t border-gray-200 flex items-end"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <nav className="app-nav" aria-label="Main">
         {TABS[role].map(([key, Icon, label, center]) =>
           center ? (
-            <button key={key} onClick={() => setTab(key)} aria-label={label}
-              className="flex-1 flex justify-center pb-3">
-              <span className="-mt-7 w-14 h-14 rounded-full bg-green-800 text-white flex items-center justify-center border-4 border-white"
-                style={{ boxShadow: '0 4px 10px rgba(31,122,53,.4)' }}>
-                <Icon size={26} />
-              </span>
+            <button key={key} type="button" onClick={() => setTab(key)} aria-label="Report waste" className="nav-fab-wrap">
+              <span className="nav-fab"><Icon size={26} /></span>
+              <span className="nav-fab-label">{label}</span>
             </button>
           ) : (
-            <button key={key} onClick={() => setTab(key)}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-[11px] ${tab === key ? 'text-green-700 font-semibold' : 'text-gray-400'}`}>
-              <Icon size={22} strokeWidth={tab === key ? 2.25 : 1.75} />
+            <button key={key} type="button" onClick={() => setTab(key)}
+              aria-current={tab === key ? 'page' : undefined} className={`nav-item ${tab === key ? 'on' : ''}`}>
+              <span className="nav-pill"><Icon size={22} strokeWidth={tab === key ? 2.25 : 1.75} /></span>
               {label}
             </button>
           )

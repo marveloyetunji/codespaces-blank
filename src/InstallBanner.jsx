@@ -42,7 +42,7 @@ export default function InstallBanner() {
   return (
     <div className="fixed inset-x-3 z-[1200] rounded-2xl p-3 text-white flex items-center gap-3 shadow-xl"
       style={{
-        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 4.75rem)',
+        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 5.75rem)',
         background: 'linear-gradient(135deg,#065f46,#10b981)',
       }}>
       <span className="text-3xl">♻️</span>
