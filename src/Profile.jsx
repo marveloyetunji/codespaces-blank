@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { LogOut, ChevronRight, ArrowLeft, User, Lock, Recycle, HelpCircle, Mail, Phone } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { COUNTRIES, splitPhone, checkPhone } from './phone'
@@ -17,38 +17,48 @@ const GUIDE = [
 ]
 
 const FAQ = [
-  ['How do I report waste?', 'Tap the green button, allow location, choose the type, add a photo and submit.'],
+  ['How do I report waste?', 'Tap the green button, add a photo, set the place, add details and send.'],
   ['What happens after I submit?', 'An admin reviews it, approves or rejects it, then assigns a collector. You get a notification at each step.'],
   ['Why was my report rejected?', 'Open the report. The admin writes the reason there.'],
-  ['Can I cancel a report?', 'Yes, but only while it is still marked Submitted.'],
+  ['Can I cancel a report?', 'Yes, until a collector is assigned.'],
   ['How do I rate a collection?', 'When a report is collected, open My reports and tap the stars.'],
-  ['The app cannot find my location', 'Allow location for this site in your browser settings, then try again in an open area.'],
+  ['The app cannot find my location', 'Turn on location for your phone and allow it for this site, then try again in an open area.'],
 ]
 
 function Page({ title, onBack, children }) {
   return (
     <div className="max-w-md mx-auto space-y-4">
-      <div className="flex items-center gap-2">
-        <button onClick={onBack} aria-label="Back" className="p-1 -ml-1"><ArrowLeft size={22} /></button>
-        <h1 className="text-xl font-bold text-gray-900">{title}</h1>
+      <div className="flex items-center gap-1">
+        <button type="button" onClick={onBack} aria-label="Back" className="w-11 h-11 -ml-2 flex items-center justify-center text-ink">
+          <ArrowLeft size={22} />
+        </button>
+        <h1 className="text-xl font-extrabold text-ink">{title}</h1>
       </div>
       {children}
     </div>
   )
 }
 
-function Row({ icon: Icon, label, onClick, href }) {
-  const cls = 'w-full bg-white border border-gray-200 rounded-lg px-3 py-3 flex items-center gap-3 text-left'
+function Row({ icon: Icon, label, value, onClick, href }) {
+  const cls = 'w-full px-4 min-h-[56px] flex items-center gap-3 text-left'
   const inner = (
     <>
-      <Icon size={20} className="text-green-700" />
-      <span className="flex-1 text-sm font-medium text-gray-800">{label}</span>
-      <ChevronRight size={18} className="text-gray-400" />
+      <span className="w-9 h-9 rounded-full bg-green-100 text-green-800 flex items-center justify-center shrink-0"><Icon size={18} /></span>
+      <span className="flex-1 min-w-0">
+        <span className="block text-sm font-semibold text-ink">{label}</span>
+        {value && <span className="block text-xs text-muted truncate">{value}</span>}
+      </span>
+      <ChevronRight size={18} className="text-muted" />
     </>
   )
   return href
     ? <a href={href} className={cls}>{inner}</a>
-    : <button onClick={onClick} className={cls}>{inner}</button>
+    : <button type="button" onClick={onClick} className={cls}>{inner}</button>
+}
+
+function Note({ msg, ok }) {
+  if (!msg) return null
+  return <p role={ok ? 'status' : 'alert'} className={`text-sm ${ok ? 'text-green-800' : 'text-red-700'}`}>{msg}</p>
 }
 
 function NameEdit({ profile, onSaved, onBack }) {
@@ -70,40 +80,9 @@ function NameEdit({ profile, onSaved, onBack }) {
 
   return (
     <Page title="Edit name" onBack={onBack}>
-      <input className="field" value={name} onChange={(e) => setName(e.target.value)} />
-      {msg && <p className={`text-sm ${ok ? 'text-green-700' : 'text-red-600'}`}>{msg}</p>}
-      <button onClick={save} disabled={busy}
-        className="w-full bg-green-700 text-white rounded-lg py-3 font-semibold disabled:opacity-50">
-        {busy ? 'Saving...' : 'Save'}
-      </button>
-    </Page>
-  )
-}
-
-function PasswordEdit({ onBack }) {
-  const [pw, setPw] = useState('')
-  const [msg, setMsg] = useState('')
-  const [ok, setOk] = useState(true)
-  const [busy, setBusy] = useState(false)
-
-  const save = async () => {
-    if (pw.length < 6) { setOk(false); return setMsg('Password must be at least 6 characters.') }
-    setBusy(true)
-    const { error } = await supabase.auth.updateUser({ password: pw })
-    setBusy(false)
-    if (error) { setOk(false); return setMsg(error.message) }
-    setPw(''); setOk(true); setMsg('Password changed.')
-  }
-
-  return (
-    <Page title="Change password" onBack={onBack}>
-      <input className="field" type="password" placeholder="New password (min 6 characters)"
-        value={pw} onChange={(e) => setPw(e.target.value)} />
-      {msg && <p className={`text-sm ${ok ? 'text-green-700' : 'text-red-600'}`}>{msg}</p>}
-      <button onClick={save} disabled={busy}
-        className="w-full bg-green-700 text-white rounded-lg py-3 font-semibold disabled:opacity-50">
-        {busy ? 'Saving...' : 'Update password'}
-      </button>
+      <input className="field" aria-label="Display name" value={name} onChange={(e) => setName(e.target.value)} />
+      <Note msg={msg} ok={ok} />
+      <button type="button" onClick={save} disabled={busy} className="btn btn-primary btn-block">{busy ? 'Saving' : 'Save'}</button>
     </Page>
   )
 }
@@ -131,29 +110,73 @@ function PhoneEdit({ profile, onSaved, onBack }) {
 
   return (
     <Page title="Phone number" onBack={onBack}>
-      <p className="text-sm text-gray-600">
-        Admins can use this to reach you about your reports. Leave it empty and save to remove it.
-      </p>
+      <p className="text-sm text-muted">Admins can use this to reach you about your reports. Leave it empty and save to remove it.</p>
       <div className="flex gap-2">
-        <select className="field !w-28 !px-2 shrink-0" value={dial} aria-label="Country code"
-          onChange={(e) => setDial(e.target.value)}>
+        <select className="field !w-28 !px-2 shrink-0" value={dial} aria-label="Country code" onChange={(e) => setDial(e.target.value)}>
           {COUNTRIES.map(([c, d]) => <option key={c} value={d}>{c} {d}</option>)}
         </select>
-        <input className="field flex-1" type="tel" inputMode="tel" placeholder="Phone number"
+        <input className="field flex-1" type="tel" inputMode="tel" aria-label="Phone number" placeholder="Phone number"
           value={num} onChange={(e) => setNum(e.target.value)} />
       </div>
-      {msg && <p className={`text-sm ${ok ? 'text-green-700' : 'text-red-600'}`}>{msg}</p>}
-      <button onClick={save} disabled={busy}
-        className="w-full bg-green-700 text-white rounded-lg py-3 font-semibold disabled:opacity-50">
-        {busy ? 'Saving...' : 'Save'}
-      </button>
+      <Note msg={msg} ok={ok} />
+      <button type="button" onClick={save} disabled={busy} className="btn btn-primary btn-block">{busy ? 'Saving' : 'Save'}</button>
+    </Page>
+  )
+}
+
+function PasswordEdit({ onBack }) {
+  const [pw, setPw] = useState('')
+  const [msg, setMsg] = useState('')
+  const [ok, setOk] = useState(true)
+  const [busy, setBusy] = useState(false)
+
+  const save = async () => {
+    if (pw.length < 6) { setOk(false); return setMsg('Password must be at least 6 characters.') }
+    setBusy(true)
+    const { error } = await supabase.auth.updateUser({ password: pw })
+    setBusy(false)
+    if (error) { setOk(false); return setMsg(error.message) }
+    setPw(''); setOk(true); setMsg('Password changed.')
+  }
+
+  return (
+    <Page title="Change password" onBack={onBack}>
+      <input className="field" type="password" aria-label="New password" placeholder="New password (min 6 characters)"
+        value={pw} onChange={(e) => setPw(e.target.value)} />
+      <Note msg={msg} ok={ok} />
+      <button type="button" onClick={save} disabled={busy} className="btn btn-primary btn-block">{busy ? 'Saving' : 'Update password'}</button>
     </Page>
   )
 }
 
 export default function Profile({ profile, email, onSaved }) {
   const [view, setView] = useState(null)
+  const [stats, setStats] = useState(null)
   const back = () => setView(null)
+
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      const { data } = await supabase.from('reports').select('id,status,photo_url,rating')
+      const list = data || []
+      const done = list.filter((r) => r.status === 'collected')
+      let out
+      if (profile.role === 'collector') {
+        const rated = done.filter((r) => r.rating)
+        out = [['Jobs', list.length], ['Completed', done.length],
+          ['Avg rating', rated.length ? (rated.reduce((a, r) => a + r.rating, 0) / rated.length).toFixed(1) : '-']]
+      } else if (profile.role === 'admin') {
+        const { count } = await supabase.from('profiles').select('id', { count: 'exact', head: true })
+        out = [['Reports', list.length], ['Completed', done.length], ['Users', count || 0]]
+      } else {
+        const live = list.filter((r) => r.status !== 'cancelled')
+        out = [['Reports', live.length], ['Collected', done.length],
+          ['Eco points', live.length * 10 + done.length * 20 + live.filter((r) => r.photo_url).length * 5]]
+      }
+      if (alive) setStats(out)
+    })()
+    return () => { alive = false }
+  }, [profile.id, profile.role])
 
   if (view === 'name') return <NameEdit profile={profile} onSaved={onSaved} onBack={back} />
   if (view === 'phone') return <PhoneEdit profile={profile} onSaved={onSaved} onBack={back} />
@@ -162,9 +185,9 @@ export default function Profile({ profile, email, onSaved }) {
   if (view === 'guide') return (
     <Page title="Waste sorting guide" onBack={back}>
       {GUIDE.map(([t, d]) => (
-        <div key={t} className="bg-white border border-gray-200 rounded-lg p-3">
-          <p className="font-semibold text-green-700">{t}</p>
-          <p className="text-sm text-gray-600 mt-0.5">{d}</p>
+        <div key={t} className="bg-white border border-line rounded-2xl p-4">
+          <p className="font-display font-bold text-green-800">{t}</p>
+          <p className="text-sm text-muted mt-0.5">{d}</p>
         </div>
       ))}
     </Page>
@@ -173,9 +196,9 @@ export default function Profile({ profile, email, onSaved }) {
   if (view === 'faq') return (
     <Page title="FAQ" onBack={back}>
       {FAQ.map(([q, a]) => (
-        <div key={q} className="bg-white border border-gray-200 rounded-lg p-3">
-          <p className="font-semibold text-gray-900 text-sm">{q}</p>
-          <p className="text-sm text-gray-600 mt-0.5">{a}</p>
+        <div key={q} className="bg-white border border-line rounded-2xl p-4">
+          <p className="font-semibold text-ink text-sm">{q}</p>
+          <p className="text-sm text-muted mt-0.5">{a}</p>
         </div>
       ))}
     </Page>
@@ -183,32 +206,38 @@ export default function Profile({ profile, email, onSaved }) {
 
   return (
     <div className="max-w-md mx-auto space-y-5">
-      <div className="text-center">
-        <h1 className="text-xl font-bold text-gray-900 mb-4">My Profile</h1>
-        <div className="mx-auto w-20 h-20 rounded-full bg-green-700 text-white text-3xl font-bold flex items-center justify-center">
+      <div className="text-center pt-2">
+        <div className="mx-auto w-24 h-24 rounded-full bg-green-700 text-white text-4xl font-extrabold flex items-center justify-center font-display">
           {(profile.name || email || '?')[0].toUpperCase()}
         </div>
-        <p className="mt-3 text-lg font-bold text-gray-900">{profile.name || 'No name'}</p>
-        <p className="text-sm text-gray-500 capitalize">{profile.role} account</p>
-        <p className="text-sm text-gray-500">{profile.phone || 'No phone number added'}</p>
-        <button onClick={() => setView('name')} className="text-sm text-green-700 font-medium mt-1">Edit my profile</button>
+        <h1 className="mt-3 text-xl font-extrabold text-ink">{profile.name || 'No name'}</h1>
+        <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 capitalize">{profile.role}</span>
+        <p className="text-sm text-muted mt-2">{email}</p>
+        <p className="text-sm text-muted">{profile.phone || 'No phone number added'}</p>
       </div>
 
-      <div className="space-y-2">
-        <Row icon={User} label="Edit name" onClick={() => setView('name')} />
-        <Row icon={Phone} label="Phone number" onClick={() => setView('phone')} />
+      <div className="bg-white border border-line rounded-2xl grid grid-cols-3 divide-x divide-line text-center">
+        {(stats || [['', '-'], ['', '-'], ['', '-']]).map(([label, v], i) => (
+          <div key={i} className="py-3">
+            <p className="font-display text-xl font-extrabold text-ink">{v}</p>
+            <p className="text-[11px] text-muted min-h-[14px]">{label}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-white border border-line rounded-2xl divide-y divide-line">
+        <Row icon={User} label="Edit name" value={profile.name} onClick={() => setView('name')} />
+        <Row icon={Phone} label="Phone number" value={profile.phone || 'Not added'} onClick={() => setView('phone')} />
         <Row icon={Lock} label="Change password" onClick={() => setView('password')} />
         <Row icon={Recycle} label="Waste sorting guide" onClick={() => setView('guide')} />
         <Row icon={HelpCircle} label="FAQ" onClick={() => setView('faq')} />
-        <Row icon={Mail} label="Contact us"
-          href={`mailto:${CONTACT_EMAIL}?subject=EcoTrack%20support`} />
+        <Row icon={Mail} label="Contact us" href={`mailto:${CONTACT_EMAIL}?subject=EcoTrack%20support`} />
       </div>
 
-      <button onClick={() => supabase.auth.signOut()}
-        className="w-full bg-green-700 text-white rounded-lg py-3 font-semibold flex items-center justify-center gap-2">
+      <button type="button" onClick={() => supabase.auth.signOut()} className="btn btn-outline btn-block">
         <LogOut size={18} /> Log out
       </button>
-      <p className="text-center text-xs text-gray-400">{email} · EcoTrack v1.0</p>
+      <p className="text-center text-xs text-muted">EcoTrack v1.0</p>
     </div>
   )
 }

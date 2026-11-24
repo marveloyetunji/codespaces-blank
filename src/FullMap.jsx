@@ -4,7 +4,7 @@ import { useLayoutEffect } from 'react'
 export default function FullMap({ children }) {
   useLayoutEffect(() => {
     const main = document.getElementById('app-main')
-    if (main) main.setAttribute('data-bleed', '1')
+    if (main) { main.scrollTo(0, 0); main.setAttribute('data-bleed', '1') }
     return () => { if (main) main.removeAttribute('data-bleed') }
   }, [])
   return <div className="map-screen">{children}</div>

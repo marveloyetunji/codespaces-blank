@@ -234,17 +234,25 @@ export default function Citizen({ view = 'home', go, name }) {
           <ChevronRight size={20} className="text-gray-400" />
         </button>
 
-        <div className="grid grid-cols-3 gap-3">
-          {tiles.map(([key, Icon, label]) => (
-            <button key={key} onClick={() => go(key)}
-              className="bg-white border border-gray-200 rounded-2xl py-3 flex flex-col items-center gap-2">
-              <span className="w-10 h-10 rounded-full bg-green-100 text-green-800 flex items-center justify-center">
-                <Icon size={20} />
-              </span>
-              <span className="text-xs font-medium text-gray-700">{label}</span>
+        <div className="bg-white border border-line rounded-2xl grid grid-cols-3 divide-x divide-line text-center">
+          {[
+            ['Open', reports.filter((r) => !isClosed(r)).length],
+            ['In progress', reports.filter((r) => ['assigned', 'in_progress'].includes(r.status)).length],
+            ['Completed', collected.length],
+          ].map(([label, v]) => (
+            <button key={label} type="button" onClick={() => go('history')} className="py-3 min-h-[64px]">
+              <p className="font-display text-xl font-extrabold text-ink">{v}</p>
+              <p className="text-xs text-muted">{label}</p>
             </button>
           ))}
         </div>
+
+        <button type="button" onClick={() => go('nearby')}
+          className="w-full bg-white border border-line rounded-2xl px-4 min-h-[56px] flex items-center gap-3 text-left">
+          <span className="w-9 h-9 rounded-full bg-green-100 text-green-800 flex items-center justify-center"><MapPin size={18} /></span>
+          <span className="flex-1 text-sm font-semibold text-ink">Reports near you</span>
+          <ChevronRight size={18} className="text-muted" />
+        </button>
 
         {err && <p className="text-sm text-red-600">{err}</p>}
 

@@ -16,6 +16,7 @@ import Profile from './Profile'
 import Bell from './Bell'
 import Notifications from './Notifications'
 import Onboarding from './Onboarding'
+import Intro from './Intro'
 import NearbyMap from './NearbyMap'
 import Schedule from './Schedule'
 
@@ -35,6 +36,9 @@ export default function App() {
     try { return localStorage.getItem('onboarded') === '1' } catch (e) { return true }
   })
   const mainRef = useRef(null)
+  const [intro, setIntro] = useState(() => {
+    try { return sessionStorage.getItem('intro') !== '1' } catch (e) { return false }
+  })
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => { setSession(data.session); setReady(true) })
@@ -55,6 +59,9 @@ export default function App() {
     if (mainRef.current) mainRef.current.scrollTo(0, 0)
   }, [tab])
 
+  if (intro) {
+    return <Intro onDone={() => { try { sessionStorage.setItem('intro', '1') } catch (e) {} setIntro(false) }} />
+  }
   if (recovering) return <ResetPassword onDone={() => setRecovering(false)} />
   if (!ready) return <Splash />
   if (!session) return seen ? <Auth /> : <Onboarding onDone={() => setSeen(true)} />
@@ -83,7 +90,7 @@ export default function App() {
           {role === 'citizen' && tab === 'report' && (
             <ReportForm onDone={() => setTab('history')} onBack={() => setTab('home')} />
           )}
-          {role === 'collector' && tab === 'home' && <Collector />}
+          {role === 'collector' && tab === 'home' && <Collector name={profile.name} />}
           {role === 'admin' && tab === 'home' && <Admin />}
           {role === 'admin' && tab === 'users' && <Users />}
           {tab === 'alerts' && <Notifications userId={session.user.id} />}

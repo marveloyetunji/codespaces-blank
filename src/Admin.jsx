@@ -1,175 +1,81 @@
-import { useEffect, useState, useCallback } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Circle, Popup, Marker } from 'react-leaflet'
-import MapTiles from './MapTiles'
-import { pinIcon } from './mapStyle'
-import 'leaflet/dist/leaflet.css'
-import { Search, Download, Flame, ChevronDown, ChevronUp, Recycle } from 'lucide-react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { Search, Download, SlidersHorizontal, ChevronRight, Recycle, Clock } from 'lucide-react'
 import { supabase } from './supabaseClient'
-import { buzz } from './haptic'
 import Analytics from './Analytics'
-import Timeline from './Timeline'
-import BeforeAfter from './BeforeAfter'
-import SectionTabs from './SectionTabs'
-import LocateControl from './LocateControl'
 import AdminMap from './AdminMap'
+import ReportSheet from './ReportSheet'
 import { Skeleton, Empty } from './Skeleton'
+import { StatusBadge, SegTabs } from './ui'
 import { exportCsv } from './exportCsv'
 import { isUrgent, isOverdue } from './priority'
-import { fmtPref } from './schedule'
+import { ago } from './time'
 
-const STYLE = {
-  pending: 'bg-amber-50 text-amber-700',
-  approved: 'bg-teal-50 text-teal-700',
-  assigned: 'bg-blue-50 text-blue-700',
-  in_progress: 'bg-orange-50 text-orange-700',
-  collected: 'bg-green-100 text-green-800',
-  rejected: 'bg-red-50 text-red-700',
-  cancelled: 'bg-gray-100 text-gray-600',
-}
-const HEX = { pending: '#d97706', approved: '#0d9488', assigned: '#2563eb', in_progress: '#ea580c', collected: '#2E9B47', rejected: '#9ca3af', cancelled: '#9ca3af' }
-const LABEL = (s) => (s === 'pending' ? 'Submitted' : s.replace('_', ' '))
+const TABS = [['overview', 'Overview'], ['reports', 'Reports'], ['map', 'Map']]
 const isClosed = (r) => ['collected', 'rejected', 'cancelled'].includes(r.status)
+const FILTERS = [
+  ['open', 'All open', (r) => !isClosed(r)],
+  ['pending', 'Received', (r) => r.status === 'pending'],
+  ['approved', 'Approved', (r) => r.status === 'approved'],
+  ['active', 'With collectors', (r) => ['assigned', 'in_progress'].includes(r.status)],
+  ['overdue', 'Overdue', (r) => isOverdue(r)],
+  ['collected', 'Completed', (r) => r.status === 'collected'],
+  ['closed', 'Rejected or cancelled', (r) => ['rejected', 'cancelled'].includes(r.status)],
+]
 
-function Stat({ label, value, tone }) {
-  return (
-    <div className="bg-white border border-gray-200 rounded-xl p-3">
-      <p className={`text-2xl font-bold ${tone || 'text-gray-900'}`}>{value}</p>
-      <p className="text-xs text-gray-500">{label}</p>
-    </div>
-  )
-}
-
-function ReportRow({ r, collectors, reload }) {
-  const [open, setOpen] = useState(false)
-  const [rejecting, setRejecting] = useState(false)
-  const [reason, setReason] = useState('')
-  const [err, setErr] = useState('')
-  const [busy, setBusy] = useState(false)
-
-  const update = async (patch) => {
-    setBusy(true); setErr('')
-    const { error } = await supabase.from('reports').update(patch).eq('id', r.id)
-    setBusy(false)
-    if (error) setErr(error.message)
-    else { buzz(); setRejecting(false); setReason(''); reload() }
-  }
-
-  const assign = (id) =>
-    update(id ? { assigned_to: id, status: 'assigned' } : { assigned_to: null, status: 'approved' })
-
-  const confirmReject = () => {
-    if (!reason.trim()) return setErr('Write a reason for the resident.')
-    update({ status: 'rejected', rejection_reason: reason.trim() })
-  }
-
-  const collector = collectors.find((c) => c.id === r.assigned_to)
+function ReportRow({ r, who, onOpen }) {
+  const urgent = isUrgent(r)
+  const late = isOverdue(r)
+  const col = r.assigned_to ? (who[r.assigned_to] || {}).name : null
+  const rep = (who[r.user_id] || {}).name
+  const img = r.status === 'collected' ? r.proof_url || r.photo_url : r.photo_url
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2 overflow-hidden"
-      style={isOverdue(r) ? { borderLeft: '4px solid #dc2626' } : undefined}>
-      {r.photo_url && (
-        <div className="relative -mx-3 -mt-3 h-36 bg-green-100">
-          <img src={r.photo_url} alt="" className="w-full h-full object-cover" />
-          <span className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-semibold capitalize shadow-sm ${STYLE[r.status]}`}>{LABEL(r.status)}</span>
-        </div>
-      )}
-      <div className="flex gap-3">
-        {r.photo_url
-          ? null
-          : <div className="w-14 h-14 rounded-lg bg-green-100 text-green-700 flex items-center justify-center"><Recycle size={22} /></div>}
-        <div className="flex-1 min-w-0 text-sm">
-          <p className="font-semibold">
-            {r.waste_type}
-            {isUrgent(r) && <span className="ml-2 text-[10px] bg-red-600 text-white px-1.5 py-0.5 rounded">URGENT</span>}
-            {isOverdue(r) && <span className="ml-1 text-[10px] bg-red-50 text-red-700 px-1.5 py-0.5 rounded">Overdue</span>}
+    <button type="button" onClick={onOpen}
+      className="w-full text-left bg-white border border-line rounded-2xl p-3 flex gap-3"
+      style={late ? { borderLeft: '4px solid #C62828' } : urgent ? { borderLeft: '4px solid #E65100' } : undefined}>
+      {img
+        ? <img src={img} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0" />
+        : <div className="w-14 h-14 rounded-xl bg-green-100 text-green-700 flex items-center justify-center shrink-0"><Recycle size={22} /></div>}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <p className="font-display font-bold text-ink leading-snug">
+            {r.waste_type}{r.quantity && <span className="font-sans font-medium text-muted"> · {r.quantity}</span>}
           </p>
-          <p className="text-gray-500 truncate">{r.address}</p>
-          {r.preferred_date && <p className="text-xs text-green-700">Preferred: {fmtPref(r)}</p>}
-          <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs capitalize ${STYLE[r.status]}`}>{LABEL(r.status)}</span>
-          {collector && <span className="ml-2 text-xs text-gray-500">{collector.name || 'Collector'}</span>}
+          <StatusBadge status={r.status} />
         </div>
-        <button onClick={() => setOpen(!open)} aria-label="Details" className="text-gray-400 self-start p-1">
-          {open ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-        </button>
+        <p className="text-sm text-muted truncate">{r.address}</p>
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted">
+          {rep && <span>{rep}</span>}
+          <span className="flex items-center gap-1"><Clock size={12} />{ago(r.created_at)}</span>
+          {col && <span className="text-green-800 font-semibold">{col}</span>}
+          {urgent && <span className="font-semibold text-orange-800">Urgent</span>}
+          {late && <span className="font-semibold text-red-700">Overdue</span>}
+        </div>
       </div>
-
-      {open && (
-        <div className="space-y-2 text-sm">
-          <p className="text-xs text-gray-500">Coordinates: {r.lat.toFixed(5)}, {r.lng.toFixed(5)}</p>
-          {r.quantity && <p className="text-gray-700">Quantity: {r.quantity}</p>}
-          {r.description && <p className="text-gray-700">{r.description}</p>}
-          <BeforeAfter r={r} />
-          {r.status === 'rejected'
-            ? <p className="text-xs text-red-700">Rejected: {r.rejection_reason}</p>
-            : r.status === 'cancelled'
-            ? <p className="text-xs text-gray-700">Cancelled by resident: {r.cancel_reason}</p>
-            : <Timeline r={r} />}
-          {r.rating && <p className="text-xs text-gray-600">Resident rating: <b>{r.rating} of 5</b></p>}
-        </div>
-      )}
-
-      {r.status === 'pending' && !rejecting && (
-        <div className="flex gap-2">
-          <button disabled={busy} onClick={() => update({ status: 'approved' })}
-            className="flex-1 bg-green-700 text-white rounded-lg py-2 text-sm font-semibold disabled:opacity-50">Approve</button>
-          <button disabled={busy} onClick={() => setRejecting(true)}
-            className="flex-1 border border-red-300 text-red-600 rounded-lg py-2 text-sm font-semibold">Reject</button>
-        </div>
-      )}
-
-      {rejecting && (
-        <div className="space-y-2">
-          <textarea className="field" rows={2} placeholder="Reason for the resident"
-            value={reason} onChange={(e) => setReason(e.target.value)} />
-          <div className="flex gap-2">
-            <button disabled={busy} onClick={confirmReject}
-              className="flex-1 bg-red-600 text-white rounded-lg py-2 text-sm font-semibold disabled:opacity-50">Confirm reject</button>
-            <button onClick={() => { setRejecting(false); setErr('') }}
-              className="flex-1 border border-gray-300 text-gray-600 rounded-lg py-2 text-sm">Back</button>
-          </div>
-        </div>
-      )}
-
-      {(r.status === 'approved' || r.status === 'assigned') && (
-        <select className="field" disabled={busy} value={r.assigned_to || ''}
-          onChange={(e) => assign(e.target.value)}>
-          <option value="">Assign to a collector</option>
-          {collectors.map((c) => <option key={c.id} value={c.id}>{c.name || 'Collector'}</option>)}
-        </select>
-      )}
-
-      {r.status === 'assigned' && (
-        <p className="text-xs text-gray-600">{r.accepted_at ? 'Accepted by the collector.' : 'Waiting for the collector to accept.'}</p>
-      )}
-      {r.status === 'approved' && r.decline_reason && (
-        <p className="text-xs text-amber-700">
-          Declined by {(collectors.find((c) => c.id === r.declined_by) || {}).name || 'a collector'}: {r.decline_reason}. Assign another collector.
-        </p>
-      )}
-      {err && <p className="text-xs text-red-600">{err}</p>}
-    </div>
+    </button>
   )
 }
 
 export default function Admin() {
   const [reports, setReports] = useState([])
-  const [collectors, setCollectors] = useState([])
+  const [people, setPeople] = useState([])
   const [loaded, setLoaded] = useState(false)
   const [loadErr, setLoadErr] = useState('')
   const [page, setPage] = useState('overview')
-  const [view, setView] = useState('active')
-  const [heat, setHeat] = useState(false)
+  const [fStatus, setFStatus] = useState('open')
   const [q, setQ] = useState('')
-  const [fStatus, setFStatus] = useState('')
   const [fType, setFType] = useState('')
   const [fCol, setFCol] = useState('')
+  const [more, setMore] = useState(false)
+  const [sheetId, setSheetId] = useState(null)
 
   const load = useCallback(async () => {
-    const r = await supabase.from('reports').select('*').order('created_at', { ascending: false })
-    const c = await supabase.from('profiles').select('id,name').eq('role', 'collector')
-    if (r.error) setLoadErr(r.error.message)
-    else { setLoadErr(''); setReports(r.data || []) }
-    setCollectors(c.data || [])
+    const [r, p] = await Promise.all([
+      supabase.from('reports').select('*').order('created_at', { ascending: false }),
+      supabase.from('profiles').select('id,name,phone,role'),
+    ])
+    if (r.error) setLoadErr(r.error.message); else { setLoadErr(''); setReports(r.data || []) }
+    if (!p.error) setPeople(p.data || [])
     setLoaded(true)
   }, [])
 
@@ -181,16 +87,39 @@ export default function Admin() {
     return () => supabase.removeChannel(ch)
   }, [load])
 
-  const nameOf = (id) => collectors.find((c) => c.id === id)?.name || 'Collector'
+  const who = useMemo(() => Object.fromEntries(people.map((p) => [p.id, p])), [people])
+  const collectors = people.filter((p) => p.role === 'collector')
+  const nameOf = (id) => (who[id] || {}).name || 'Collector'
   const n = (fn) => reports.filter(fn).length
+
+  const pend = n((r) => r.status === 'pending')
+  const appr = n((r) => r.status === 'approved')
+  const late = n((r) => isOverdue(r))
+  const active = n((r) => ['assigned', 'in_progress'].includes(r.status))
+  const doneCount = n((r) => r.status === 'collected')
   const types = [...new Set(reports.map((r) => r.waste_type))]
 
+  const sheet = sheetId ? reports.find((r) => r.id === sheetId) : null
+  const sheetEl = sheet
+    ? <ReportSheet r={sheet} collectors={collectors} who={who} reload={load} onClose={() => setSheetId(null)} />
+    : null
+
+  if (page === 'map' && loaded) {
+    return (
+      <>
+        <AdminMap reports={reports} collectors={collectors} page={page} setPage={setPage} onOpen={setSheetId} />
+        {sheetEl}
+      </>
+    )
+  }
+
+  const test = FILTERS.find((f) => f[0] === fStatus)[2]
+  const term = q.trim().toLowerCase()
   const shown = reports.filter((r) =>
-    (view === 'done' ? isClosed(r) : !isClosed(r)) &&
-    (!fStatus || r.status === fStatus) &&
+    test(r) &&
     (!fType || r.waste_type === fType) &&
     (!fCol || (fCol === 'none' ? !r.assigned_to : r.assigned_to === fCol)) &&
-    (!q || ((r.address || '') + ' ' + (r.description || '') + ' ' + r.waste_type).toLowerCase().includes(q.toLowerCase()))
+    (!term || [r.address, r.description, r.waste_type, (who[r.user_id] || {}).name].join(' ').toLowerCase().includes(term))
   )
 
   const perf = collectors.map((c) => {
@@ -206,127 +135,134 @@ export default function Admin() {
     }
   })
 
-  const cells = {}
-  reports.filter((r) => !isClosed(r)).forEach((r) => {
-    const k = Math.round(r.lat / 0.003) + ':' + Math.round(r.lng / 0.003)
-    const c = cells[k] || (cells[k] = { n: 0, lat: 0, lng: 0, address: r.address })
-    c.n++; c.lat += r.lat; c.lng += r.lng
-  })
-  const hotspots = Object.values(cells).map((c) => ({ ...c, lat: c.lat / c.n, lng: c.lng / c.n })).sort((a, b) => b.n - a.n)
-
-  const onMap = reports.filter((r) => !['rejected', 'cancelled'].includes(r.status))
-  const center = onMap[0] ? [onMap[0].lat, onMap[0].lng] : [9.08, 8.67]
+  const sub = !loaded ? ' ' : `${pend + appr} waiting on you${late ? ` · ${late} overdue` : ''}`
 
   return (
-    <div className="max-w-md lg:max-w-5xl mx-auto space-y-4">
-      <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
-
-      <div className="flex bg-white border border-gray-200 rounded-xl p-1 gap-1">
-        {[['overview', 'Overview'], ['reports', 'Reports'], ['map', 'Map']].map(([k, label]) => (
-          <button key={k} onClick={() => setPage(k)}
-            className={`flex-1 rounded-lg py-2 text-sm font-semibold ${page === k ? 'bg-green-700 text-white' : 'text-gray-500'}`}>
-            {label}
-          </button>
-        ))}
+    <div className="max-w-md lg:max-w-3xl mx-auto">
+      <div className="-mx-4 -mt-4 bg-forest text-white px-4 pt-3 pb-5">
+        <h1 className="text-[24px] leading-tight font-extrabold">Dashboard</h1>
+        <p className="text-sm text-white/80 min-h-[20px]">{sub}</p>
+        <div className="mt-4 grid grid-cols-3 rounded-2xl bg-white/10 divide-x divide-white/15 text-center">
+          {[['Awaiting review', pend], ['With collectors', active], ['Completed', doneCount]].map(([label, v]) => (
+            <div key={label} className="py-3">
+              <p className="font-display text-xl font-extrabold">{v}</p>
+              <p className="text-[11px] text-white/70">{label}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {loadErr && <p className="text-sm text-red-600">{loadErr}</p>}
-      {!loaded && <Skeleton rows={3} />}
+      <div className="sticky top-0 z-10 -mx-4 px-4 py-3 bg-page">
+        <SegTabs label="Admin sections" tabs={TABS} value={page} onChange={setPage} />
+      </div>
 
-      {loaded && page === 'overview' && (
-        <div className="space-y-4">
-          <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
-            <p className="px-3 pt-3 pb-2 font-semibold text-green-700">Needs your attention</p>
-            {[
-              ['Awaiting review', n((r) => r.status === 'pending'), 'pending'],
-              ['Approved, waiting for a collector', n((r) => r.status === 'approved'), 'approved'],
-              ['Overdue', n(isOverdue), ''],
-            ].map(([label, count, status]) => (
-              <button key={label} onClick={() => { setFStatus(status); setView('active'); setPage('reports') }}
-                className="w-full flex items-center justify-between px-3 py-3 text-left">
-                <span className="text-sm text-gray-800">{label}</span>
-                <span className={`text-sm font-bold px-2 py-0.5 rounded-full ${count ? 'bg-amber-50 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>{count}</span>
-              </button>
-            ))}
+      <div className="space-y-3 pt-1 pb-4">
+        {loadErr && (
+          <div role="alert" className="bg-red-50 text-red-800 rounded-xl px-3 py-2.5 text-sm flex items-center justify-between gap-3">
+            <span>{loadErr}</span>
+            <button type="button" onClick={load} className="font-semibold underline shrink-0">Try again</button>
           </div>
-          <p className="text-sm text-gray-600">
-            {n((r) => ['assigned', 'in_progress'].includes(r.status))} with collectors · {n((r) => r.status === 'collected')} collected · {n((r) => r.status === 'rejected')} rejected
-          </p>
+        )}
+        {!loaded && <Skeleton rows={3} />}
 
-          <div className="bg-white border border-gray-200 rounded-xl p-3">
-            <p className="font-semibold text-green-700 mb-2">Collector performance</p>
-            {perf.length === 0 && <p className="text-sm text-gray-500">No collectors yet. Set a role in Users.</p>}
-            {perf.length > 0 && (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs text-gray-500">
-                    <th className="font-medium pb-1">Name</th><th className="font-medium pb-1">Open</th>
-                    <th className="font-medium pb-1">Done</th><th className="font-medium pb-1">Rating</th>
-                    <th className="font-medium pb-1">Avg h</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {perf.map((p) => (
-                    <tr key={p.id} className="border-t border-gray-100">
-                      <td className="py-1.5 pr-2 truncate max-w-[90px]">{p.name}</td>
-                      <td>{p.open}</td><td>{p.done}</td><td>{p.rating}</td><td>{p.avg}</td>
+        {loaded && page === 'overview' && (
+          <>
+            <div className="bg-white border border-line rounded-2xl divide-y divide-line">
+              <h2 className="px-4 pt-3 pb-2 font-display font-bold text-ink">Needs your attention</h2>
+              {[['Awaiting review', pend, 'pending'], ['Approved, no collector yet', appr, 'approved'], ['Overdue', late, 'overdue']].map(([label, count, key]) => (
+                <button key={key} type="button" onClick={() => { setFStatus(key); setPage('reports') }}
+                  className="w-full flex items-center justify-between px-4 min-h-[52px] text-left">
+                  <span className="text-sm text-ink">{label}</span>
+                  <span className="flex items-center gap-2">
+                    <span className={`min-w-[28px] text-center text-sm font-bold px-2 py-0.5 rounded-full ${count ? 'bg-amber-50 text-amber-800' : 'bg-gray-100 text-muted'}`}>{count}</span>
+                    <ChevronRight size={18} className="text-muted" />
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <div className="bg-white border border-line rounded-2xl p-4">
+              <h2 className="font-display font-bold text-ink mb-2">Collector performance</h2>
+              {perf.length === 0 && <p className="text-sm text-muted">No collectors yet. Set a role in Users.</p>}
+              {perf.length > 0 && (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs text-muted">
+                      <th className="font-medium pb-1">Name</th><th className="font-medium pb-1">Open</th>
+                      <th className="font-medium pb-1">Done</th><th className="font-medium pb-1">Rating</th>
+                      <th className="font-medium pb-1">Avg h</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {perf.map((p) => (
+                      <tr key={p.id} className="border-t border-line">
+                        <td className="py-2 pr-2 truncate max-w-[110px]">{p.name}</td>
+                        <td>{p.open}</td><td>{p.done}</td><td>{p.rating}</td><td>{p.avg}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            <Analytics reports={reports} />
+          </>
+        )}
+
+        {loaded && page === 'reports' && (
+          <>
+            <div className="relative">
+              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+              <input className="field !pl-11" placeholder="Search address, notes or reporter" aria-label="Search reports"
+                value={q} onChange={(e) => setQ(e.target.value)} />
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
+              {FILTERS.map(([k, label, fn]) => (
+                <button key={k} type="button" aria-pressed={fStatus === k} onClick={() => setFStatus(k)}
+                  className={`shrink-0 whitespace-nowrap rounded-full px-3.5 min-h-[36px] text-sm font-semibold border ${fStatus === k ? 'bg-forest text-white border-forest' : 'bg-white text-ink border-line'}`}>
+                  {label} ({reports.filter(fn).length})
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between">
+              <button type="button" onClick={() => setMore(!more)}
+                className="text-sm font-semibold text-green-800 flex items-center gap-1.5 min-h-[40px]">
+                <SlidersHorizontal size={16} /> {more ? 'Hide filters' : 'More filters'}
+              </button>
+              <button type="button" onClick={() => exportCsv(reports, nameOf)}
+                className="text-sm font-semibold text-green-800 flex items-center gap-1.5 min-h-[40px]">
+                <Download size={16} /> Export CSV
+              </button>
+            </div>
+
+            {more && (
+              <div className="grid grid-cols-2 gap-2">
+                <select className="field" aria-label="Waste type" value={fType} onChange={(e) => setFType(e.target.value)}>
+                  <option value="">All types</option>
+                  {types.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <select className="field" aria-label="Collector" value={fCol} onChange={(e) => setFCol(e.target.value)}>
+                  <option value="">All collectors</option>
+                  <option value="none">Unassigned</option>
+                  {collectors.map((c) => <option key={c.id} value={c.id}>{c.name || 'Collector'}</option>)}
+                </select>
+              </div>
             )}
-          </div>
 
-          <Analytics reports={reports} />
-        </div>
-      )}
+            <p className="text-xs text-muted">Showing {shown.length} of {reports.length}</p>
 
-      {loaded && page === 'reports' && (
-        <div className="space-y-3">
-          <div className="relative">
-            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input className="field !pl-10" placeholder="Search address or description"
-              value={q} onChange={(e) => setQ(e.target.value)} />
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <select className="field !p-2 text-xs" value={fStatus} onChange={(e) => setFStatus(e.target.value)}>
-              <option value="">All status</option>
-              {Object.keys(STYLE).map((s) => <option key={s} value={s}>{LABEL(s)}</option>)}
-            </select>
-            <select className="field !p-2 text-xs" value={fType} onChange={(e) => setFType(e.target.value)}>
-              <option value="">All types</option>
-              {types.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-            <select className="field !p-2 text-xs" value={fCol} onChange={(e) => setFCol(e.target.value)}>
-              <option value="">All collectors</option>
-              <option value="none">Unassigned</option>
-              {collectors.map((c) => <option key={c.id} value={c.id}>{c.name || 'Collector'}</option>)}
-            </select>
-          </div>
+            {reports.length === 0 && <Empty title="No reports yet" text="New resident reports will appear here." />}
+            {reports.length > 0 && shown.length === 0 && <Empty title="No matches" text="Try a different filter or search." />}
+            <div className="grid gap-3 lg:grid-cols-2">
+              {shown.map((r) => <ReportRow key={r.id} r={r} who={who} onOpen={() => setSheetId(r.id)} />)}
+            </div>
+          </>
+        )}
+      </div>
 
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-gray-500">Showing {shown.length} of {reports.length}</p>
-            <button onClick={() => exportCsv(reports, nameOf)}
-              className="text-sm text-green-700 font-medium flex items-center gap-1">
-              <Download size={16} /> Export CSV
-            </button>
-          </div>
-
-          <SectionTabs view={view} setView={setView} loaded={loaded}
-            active={reports.filter((r) => !isClosed(r)).length}
-            done={reports.filter(isClosed).length} />
-
-          {reports.length === 0 && <Empty title="No reports yet" text="New resident reports will appear here." />}
-          <div className="grid gap-3 lg:grid-cols-2">
-            {shown.map((r) => <ReportRow key={r.id} r={r} collectors={collectors} reload={load} />)}
-          </div>
-        </div>
-      )}
-
-      {loaded && page === 'map' && (
-        <AdminMap reports={reports} collectors={collectors} page={page} setPage={setPage}
-          onReports={(r) => { setFStatus(''); setFType(''); setFCol(''); setQ(r.address || ''); setView(isClosed(r) ? 'done' : 'active'); setPage('reports') }} />
-      )}
+      {sheetEl}
     </div>
   )
 }

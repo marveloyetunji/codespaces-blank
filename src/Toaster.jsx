@@ -49,7 +49,7 @@ export default function Toaster({ role }) {
   }, [role])
 
   return (
-    <div className="fixed top-2 inset-x-0 z-[2000] flex flex-col items-center gap-2 px-3 pointer-events-none">
+    <div className="fixed inset-x-0 z-[2000] flex flex-col items-center gap-2 px-3 pointer-events-none" style={{ top: 'calc(var(--hdr-h) + env(safe-area-inset-top, 0px) + 8px)' }}>
       {toasts.map((t) => (
         <div key={t.id}
           className="bg-green-800 text-white text-sm px-4 py-3 rounded-xl shadow-lg max-w-sm w-full">

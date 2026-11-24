@@ -19,7 +19,7 @@ export function StatusBadge({ status, className = '' }) {
 
 export function SegTabs({ tabs, value, onChange, label }) {
   return (
-    <div role="tablist" aria-label={label} className="flex p-1 gap-1 rounded-xl bg-seg">
+    <div role="tablist" aria-label={label} className="flex p-1 gap-1 rounded-xl bg-seg border border-line">
       {tabs.map(([k, text]) => (
         <button key={k} type="button" role="tab" aria-selected={value === k} onClick={() => onChange(k)}
           className={`flex-1 min-h-[40px] rounded-lg text-sm font-semibold transition-colors ${value === k ? 'bg-white text-green-800 seg-on' : 'text-muted'}`}>

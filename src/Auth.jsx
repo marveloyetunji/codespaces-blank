@@ -208,7 +208,7 @@ export default function Auth() {
     <div className="min-h-[100dvh] flex flex-col bg-forest">
       <AuthHero />
 
-      <div className="flex-1 bg-white -mt-6 rounded-t-[24px] relative z-10 px-6 pt-5"
+      <div className="flex-1 bg-green-50 -mt-6 rounded-t-[24px] relative z-10 px-6 pt-5"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
         <div className="max-w-sm mx-auto">
           <SegTabs label="Account" tabs={[['login', 'Log in'], ['signup', 'Sign up']]} value={mode} onChange={goMode} />
