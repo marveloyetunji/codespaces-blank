@@ -25,6 +25,8 @@ const CSS = `
 .i-word{margin:14px 0 0;font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif;font-weight:800;font-size:32px;color:#fff;letter-spacing:-.01em}
 .i-tag{margin:6px 0 0;font-size:14px;color:rgba(255,255,255,.7)}
 .i-skip{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);right:12px;min-width:56px;min-height:44px;padding:0 14px;border:0;border-radius:22px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.85);font-size:14px;font-weight:600;opacity:0;animation:iFade .4s ease-out 1s both}
+.intro.quick .i-scene,.intro.quick .i-cap-wrap,.intro.quick .i-skip{display:none}
+.intro.quick .i-brand{animation-delay:0s}
 @keyframes iRing{from{opacity:0;transform:scale(.55)}to{opacity:1;transform:scale(1)}}
 @keyframes iFade{to{opacity:1}}
 @keyframes iOut{to{opacity:0}}
@@ -45,20 +47,20 @@ const CSS = `
 }
 `
 
-export default function Intro({ onDone }) {
+export default function Intro({ onDone, quick = false }) {
   const [leave, setLeave] = useState(false)
 
   useEffect(() => {
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const t1 = setTimeout(() => setLeave(true), reduce ? 900 : 4250)
-    const t2 = setTimeout(onDone, reduce ? 1250 : 4600)
+    const t1 = setTimeout(() => setLeave(true), reduce ? 900 : quick ? 1300 : 4250)
+    const t2 = setTimeout(onDone, reduce ? 1250 : quick ? 1650 : 4600)
     return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [])
 
   const skip = () => { setLeave(true); setTimeout(onDone, 250) }
 
   return (
-    <div className={`intro ${leave ? 'leave' : ''}`} role="img"
+    <div className={`intro ${leave ? 'leave' : ''} ${quick ? 'quick' : ''}`} role="img"
       aria-label="EcoTrack. Spot waste, report it, watch it cleared.">
       <style>{CSS}</style>
 
@@ -96,7 +98,7 @@ export default function Intro({ onDone }) {
           </g></g>
 
           <g className="i-truck"><g transform="translate(110 441)">
-            <rect x="0" y="0" width="44" height="25" rx="4" fill="#2E9B47" />
+            <rect x="0" y="0" width="44" height="25" rx="4" fill="#118542" />
             <path d="M46 6h14l8 10v9H46z" fill="#4ADE80" />
             <rect x="52" y="9" width="9" height="7" rx="1.5" fill="#0B3D2E" opacity=".55" />
             <circle cx="12" cy="27" r="6" fill="#0B3D2E" stroke="#fff" strokeWidth="2" />

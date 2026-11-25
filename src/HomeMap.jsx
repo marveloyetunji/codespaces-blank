@@ -5,7 +5,7 @@ import { pinIcon } from './mapStyle'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-const HEX = { pending: '#d97706', approved: '#0d9488', assigned: '#2563eb', in_progress: '#ea580c', collected: '#2E9B47' }
+const HEX = { pending: '#d97706', approved: '#0d9488', assigned: '#2563eb', in_progress: '#ea580c', collected: '#118542' }
 const LABEL = { pending: 'Received', approved: 'Approved', assigned: 'Collector assigned', in_progress: 'Being attended to', collected: 'Completed' }
 
 function Fit({ pts }) {

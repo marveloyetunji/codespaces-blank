@@ -15,7 +15,6 @@ import Users from './Users'
 import Profile from './Profile'
 import Bell from './Bell'
 import Notifications from './Notifications'
-import Onboarding from './Onboarding'
 import Intro from './Intro'
 import NearbyMap from './NearbyMap'
 import Schedule from './Schedule'
@@ -60,11 +59,12 @@ export default function App() {
   }, [tab])
 
   if (intro) {
-    return <Intro onDone={() => { try { sessionStorage.setItem('intro', '1') } catch (e) {} setIntro(false) }} />
+    return <Intro quick={(() => { try { return localStorage.getItem('introSeen') === '1' } catch (e) { return false } })()}
+      onDone={() => { try { sessionStorage.setItem('intro', '1'); localStorage.setItem('introSeen', '1') } catch (e) {} setIntro(false) }} />
   }
   if (recovering) return <ResetPassword onDone={() => setRecovering(false)} />
   if (!ready) return <Splash />
-  if (!session) return seen ? <Auth /> : <Onboarding onDone={() => setSeen(true)} />
+  if (!session) return <Auth />
   if (!profile) return <Splash />
 
   const role = TABS[profile.role] ? profile.role : 'citizen'

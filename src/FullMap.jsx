@@ -7,5 +7,10 @@ export default function FullMap({ children }) {
     if (main) { main.scrollTo(0, 0); main.setAttribute('data-bleed', '1') }
     return () => { if (main) main.removeAttribute('data-bleed') }
   }, [])
-  return <div className="map-screen">{children}</div>
+  return (
+    <div className="map-screen">
+      <h1 className="sr-only">Map</h1>
+      {children}
+    </div>
+  )
 }

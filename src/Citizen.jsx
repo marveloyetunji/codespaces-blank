@@ -97,10 +97,10 @@ function ReportCard({ r, full, reload }) {
             {r.status === 'collected' && (
               r.rating
                 ? <p className="text-xs text-gray-600">Your rating: <b>{r.rating} of 5</b></p>
-                : <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500 mr-1">Rate this service</span>
+                : <div className="flex flex-wrap items-center">
+                    <span className="w-full text-xs text-muted">Rate this service</span>
                     {[1, 2, 3, 4, 5].map((n) => (
-                      <button key={n} onClick={() => rate(n)} aria-label={`${n} stars`} className="text-amber-500 p-0.5">
+                      <button key={n} onClick={() => rate(n)} aria-label={`${n} stars`} className="text-amber-600 p-3">
                         <Star size={20} />
                       </button>
                     ))}
@@ -110,7 +110,7 @@ function ReportCard({ r, full, reload }) {
         )}
 
         {['pending', 'approved'].includes(r.status) && !cancelling && (
-          <button onClick={() => { setCancelling(true); setErr('') }} className="text-xs text-red-600 underline">
+          <button onClick={() => { setCancelling(true); setErr('') }} className="text-sm font-semibold text-red-700 underline min-h-[44px]">
             Cancel report
           </button>
         )}
@@ -127,11 +127,11 @@ function ReportCard({ r, full, reload }) {
             )}
             <div className="flex gap-2">
               <button onClick={confirmCancel} disabled={busy}
-                className="flex-1 bg-red-600 text-white rounded-lg py-2 text-sm font-semibold disabled:opacity-50">
+                className="btn btn-primary flex-1 !bg-red-700">
                 {busy ? 'Cancelling...' : 'Confirm cancel'}
               </button>
               <button onClick={() => { setCancelling(false); setErr('') }} disabled={busy}
-                className="flex-1 border border-gray-300 text-gray-600 rounded-lg py-2 text-sm">Keep report</button>
+                className="btn btn-outline">Keep report</button>
             </div>
           </div>
         )}

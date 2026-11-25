@@ -6,7 +6,7 @@ import { TILE_URL, TILE_ATTR, TILE_NATIVE } from './mapStyle'
 
 const pin = L.divIcon({
   className: '',
-  html: '<div style="width:22px;height:22px;border-radius:50% 50% 50% 0;background:#2E9B47;border:3px solid #fff;transform:rotate(-45deg);box-shadow:0 2px 6px rgba(0,0,0,.45)"></div>',
+  html: '<div style="width:22px;height:22px;border-radius:50% 50% 50% 0;background:#118542;border:3px solid #fff;transform:rotate(-45deg);box-shadow:0 2px 6px rgba(0,0,0,.45)"></div>',
   iconSize: [22, 22],
   iconAnchor: [11, 24],
 })

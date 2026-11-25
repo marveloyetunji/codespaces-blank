@@ -7,7 +7,7 @@ import { RefreshCw } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { getPos } from './geo'
 
-const HEX = { pending: '#d97706', approved: '#0d9488', assigned: '#2563eb', in_progress: '#ea580c', collected: '#2E9B47' }
+const HEX = { pending: '#d97706', approved: '#0d9488', assigned: '#2563eb', in_progress: '#ea580c', collected: '#118542' }
 const LABEL = { pending: 'Received', approved: 'Approved', assigned: 'Collector assigned', in_progress: 'Being attended to', collected: 'Completed' }
 const ZOOM = { 1: 15, 2: 14, 5: 13 }
 
@@ -74,7 +74,7 @@ export default function NearbyMap() {
               zoom={ZOOM[km]} maxZoom={19} className="h-full w-full">
               <MapTiles />
               <Circle center={[pos.lat, pos.lng]} radius={km * 1000}
-                pathOptions={{ color: '#2E9B47', weight: 1, fillColor: '#2E9B47', fillOpacity: 0.05 }} />
+                pathOptions={{ color: '#118542', weight: 1, fillColor: '#118542', fillOpacity: 0.05 }} />
               <CircleMarker center={[pos.lat, pos.lng]} radius={8}
                 pathOptions={{ color: '#fff', weight: 3, fillColor: '#2563eb', fillOpacity: 1 }} />
               {rows.map((r, i) => (

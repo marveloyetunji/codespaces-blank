@@ -1,6 +1,6 @@
 export default function Logo({ size = 28, dark = false }) {
-  const bg = dark ? '#2E9B47' : '#FFFFFF'
-  const fg = dark ? '#FFFFFF' : '#2E9B47'
+  const bg = dark ? '#118542' : '#FFFFFF'
+  const fg = dark ? '#FFFFFF' : '#118542'
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-label="EcoTrack">
       <rect width="32" height="32" rx="8" fill={bg} />

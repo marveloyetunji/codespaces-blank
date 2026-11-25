@@ -15,7 +15,7 @@ export const TILE_ATTR = HAS_KEY
 export const TILE_NATIVE = HAS_KEY ? 18 : 19
 
 const cache = {}
-export const pinIcon = (color = '#2E9B47') =>
+export const pinIcon = (color = '#118542') =>
   cache[color] ||
   (cache[color] = L.divIcon({
     className: '',

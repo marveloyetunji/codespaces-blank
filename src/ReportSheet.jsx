@@ -27,6 +27,8 @@ export default function ReportSheet({ r, collectors, who, onClose, reload }) {
   const [err, setErr] = useState('')
   const [dy, setDy] = useState(0)
   const startY = useRef(null)
+  const closeRef = useRef(null)
+  useEffect(() => { if (closeRef.current) closeRef.current.focus() }, [])
 
   useEffect(() => {
     const k = (e) => { if (e.key === 'Escape') onClose() }
@@ -73,7 +75,7 @@ export default function ReportSheet({ r, collectors, who, onClose, reload }) {
           className="sticky top-0 bg-white z-10 px-4 pt-2 pb-1 flex items-center justify-between">
           <span className="absolute left-1/2 -translate-x-1/2 top-2 w-10 h-1 rounded-full bg-gray-300" />
           <h2 className="font-display font-bold text-ink pt-3">Report details</h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="w-11 h-11 -mr-2 mt-2 flex items-center justify-center text-ink">
+          <button ref={closeRef} type="button" onClick={onClose} aria-label="Close" className="w-11 h-11 -mr-2 mt-2 flex items-center justify-center text-ink">
             <X size={22} />
           </button>
         </div>

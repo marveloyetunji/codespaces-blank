@@ -68,7 +68,7 @@ export default function Track({ reports, go }) {
             scrollWheelZoom={false} dragging={false} touchZoom={false} doubleClickZoom={false}
             boxZoom={false} keyboard={false} zoomControl={false}>
             <MapTiles />
-            <Marker position={[r.lat, r.lng]} icon={pinIcon('#2E9B47')} interactive={false} />
+            <Marker position={[r.lat, r.lng]} icon={pinIcon('#118542')} interactive={false} />
           </MapContainer>
         </div>
 

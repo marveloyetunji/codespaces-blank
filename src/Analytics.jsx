@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-const COLORS = ['#2E9B47', '#0d9488', '#2563eb', '#d97706', '#7c3aed', '#dc2626', '#64748b', '#84cc16', '#db2777']
+const COLORS = ['#118542', '#0d9488', '#2563eb', '#d97706', '#7c3aed', '#dc2626', '#64748b', '#84cc16', '#db2777']
 const fmt = (d) => d.toLocaleDateString('en', { day: 'numeric', month: 'short' })
 
 function Tile({ label, value }) {
@@ -68,8 +68,8 @@ function Trend({ reports, days }) {
     <div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-24">
         <polygon points={`${P},${H - P} ${line} ${W - P},${H - P}`} fill="#E3F1E6" />
-        <polyline points={line} fill="none" stroke="#2E9B47" strokeWidth="2" strokeLinejoin="round" />
-        {days <= 14 && pts.map((p, i) => <circle key={i} cx={x(i)} cy={y(p.n)} r="2.5" fill="#2E9B47" />)}
+        <polyline points={line} fill="none" stroke="#118542" strokeWidth="2" strokeLinejoin="round" />
+        {days <= 14 && pts.map((p, i) => <circle key={i} cx={x(i)} cy={y(p.n)} r="2.5" fill="#118542" />)}
         <text x="2" y="8" fontSize="8" fill="#6b7280">{max}</text>
       </svg>
       <div className="flex justify-between text-[10px] text-gray-500">

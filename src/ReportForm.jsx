@@ -244,7 +244,7 @@ export default function ReportForm({ onDone, onBack }) {
             <p className="text-sm font-semibold text-gray-700">Type of waste</p>
             <div className="grid grid-cols-3 gap-2">
               {TYPES.map(([t, Icon]) => (
-                <button key={t} type="button" onClick={() => setType(t)}
+                <button key={t} type="button" aria-pressed={type === t} onClick={() => setType(t)}
                   className={`flex flex-col items-center gap-1.5 rounded-2xl border-[1.5px] py-3 text-xs font-medium ${
                     type === t ? 'border-green-700 bg-green-50 text-green-800' : 'border-gray-200 bg-white text-gray-600'}`}>
                   <Icon size={22} /> {t}
@@ -285,7 +285,7 @@ export default function ReportForm({ onDone, onBack }) {
               <p className="text-sm font-semibold text-gray-700">
                 Street or nearest landmark{!precise && <span className="text-red-600"> (needed)</span>}
               </p>
-              <input className="field" maxLength={120} placeholder="e.g. Opposite Methodist Church, Isale Oja"
+              <input aria-label="Street or nearest landmark" className="field" maxLength={120} placeholder="e.g. Opposite Methodist Church, Isale Oja"
                 value={landmark} onChange={(e) => setLandmark(e.target.value)} />
             </div>
           )}
@@ -301,21 +301,21 @@ export default function ReportForm({ onDone, onBack }) {
 
           <div className="space-y-2">
             <p className="text-sm font-semibold text-gray-700">How much?</p>
-            <input className="field" placeholder="e.g. 2 bags" maxLength={40}
+            <input aria-label="Quantity" className="field" placeholder="e.g. 2 bags" maxLength={40}
               value={quantity} onChange={(e) => setQuantity(e.target.value)} />
           </div>
 
           <div className="space-y-2">
             <p className="text-sm font-semibold text-gray-700">Anything else we should know?</p>
-            <textarea className="field" rows={3} placeholder="What is there and where exactly?"
+            <textarea aria-label="Notes" className="field" rows={3} placeholder="What is there and where exactly?"
               value={desc} onChange={(e) => setDesc(e.target.value)} />
           </div>
 
           <div className="space-y-2">
             <p className="text-sm font-semibold text-gray-700">Preferred collection date</p>
             <div className="grid grid-cols-2 gap-2">
-              <input type="date" className="field" min={todayStr()} value={date} onChange={(e) => setDate(e.target.value)} />
-              <select className="field" value={slot} onChange={(e) => setSlot(e.target.value)} disabled={!date}>
+              <input type="date" aria-label="Preferred collection date" className="field" min={todayStr()} value={date} onChange={(e) => setDate(e.target.value)} />
+              <select aria-label="Time slot" className="field" value={slot} onChange={(e) => setSlot(e.target.value)} disabled={!date}>
                 <option value="">Any time</option>
                 {Object.entries(SLOTS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
