@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react'
-import { LogOut, ChevronRight, ArrowLeft, User, Lock, Recycle, HelpCircle, Mail, Phone } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { LogOut, ChevronRight, ArrowLeft, User, Lock, Recycle, HelpCircle, Mail, Phone, AtSign, Camera, Loader2 } from 'lucide-react'
 import { supabase } from './supabaseClient'
+import { compressImage } from './compressImage'
 import { COUNTRIES, splitPhone, checkPhone } from './phone'
+import Avatar from './Avatar'
 
 const CONTACT_EMAIL = 'Flameskody@gmail.com'
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
 const GUIDE = [
   ['Household', 'Bag it and tie it. Keep it off the road and away from drains.'],
@@ -87,6 +90,60 @@ function NameEdit({ profile, onSaved, onBack }) {
   )
 }
 
+function EmailEdit({ email, onBack }) {
+  const [next, setNext] = useState('')
+  const [pw, setPw] = useState('')
+  const [msg, setMsg] = useState('')
+  const [ok, setOk] = useState(true)
+  const [busy, setBusy] = useState(false)
+
+  const fail = (m) => { setOk(false); setMsg(m) }
+
+  const save = async () => {
+    const e = next.trim().toLowerCase()
+    if (!EMAIL_RE.test(e)) return fail('Please enter a valid email address.')
+    if (e === (email || '').toLowerCase()) return fail('That is already your email address.')
+    if (!pw) return fail('Enter your current password to confirm it is you.')
+    setBusy(true); setMsg('')
+    const check = await supabase.auth.signInWithPassword({ email, password: pw })
+    if (check.error) { setBusy(false); return fail('Your current password is wrong.') }
+    const { data, error } = await supabase.auth.updateUser({ email: e })
+    setBusy(false)
+    if (error) {
+      const m = error.message || ''
+      if (/already|registered|exists/i.test(m)) return fail('Another account already uses that email address.')
+      if (/rate limit/i.test(m)) return fail('Too many emails were sent. Try again later.')
+      return fail(m)
+    }
+    setPw(''); setNext('')
+    const changed = data && data.user && (data.user.email || '').toLowerCase() === e
+    setOk(true)
+    setMsg(changed
+      ? 'Email updated. Log in with ' + e + ' from now on.'
+      : 'We sent a confirmation link to ' + e + '. The change applies after you open it.')
+  }
+
+  return (
+    <Page title="Email address" onBack={onBack}>
+      <p className="text-sm text-muted">Signed in as <b className="text-ink">{email}</b>. Password reset links are sent to your email address, so use one you can open.</p>
+      <div>
+        <label htmlFor="new-email" className="block text-[13px] font-semibold text-ink mb-1.5">New email address</label>
+        <input id="new-email" className="field" type="email" inputMode="email" autoComplete="email" autoCapitalize="none"
+          placeholder="name@example.com" value={next} onChange={(e) => setNext(e.target.value)} />
+      </div>
+      <div>
+        <label htmlFor="cur-pw" className="block text-[13px] font-semibold text-ink mb-1.5">Current password</label>
+        <input id="cur-pw" className="field" type="password" autoComplete="current-password"
+          placeholder="Your current password" value={pw} onChange={(e) => setPw(e.target.value)} />
+      </div>
+      <Note msg={msg} ok={ok} />
+      <button type="button" onClick={save} disabled={busy} className="btn btn-primary btn-block">
+        {busy && <Loader2 size={18} className="animate-spin" />}{busy ? 'Saving' : 'Update email'}
+      </button>
+    </Page>
+  )
+}
+
 function PhoneEdit({ profile, onSaved, onBack }) {
   const start = splitPhone(profile.phone)
   const [dial, setDial] = useState(start.dial)
@@ -152,6 +209,9 @@ function PasswordEdit({ onBack }) {
 export default function Profile({ profile, email, onSaved }) {
   const [view, setView] = useState(null)
   const [stats, setStats] = useState(null)
+  const [up, setUp] = useState(false)
+  const [photoMsg, setPhotoMsg] = useState('')
+  const fileRef = useRef(null)
   const back = () => setView(null)
 
   useEffect(() => {
@@ -178,7 +238,43 @@ export default function Profile({ profile, email, onSaved }) {
     return () => { alive = false }
   }, [profile.id, profile.role])
 
+  const removeOld = async (url) => {
+    const m = url && url.match(/\/waste-photos\/(.+)$/)
+    if (!m) return
+    try { await supabase.storage.from('waste-photos').remove([decodeURIComponent(m[1])]) } catch (e) {}
+  }
+
+  const uploadAvatar = async (file) => {
+    if (!file || up) return
+    setUp(true); setPhotoMsg('')
+    try {
+      const blob = await compressImage(file, 512, 0.82)
+      const path = `${profile.id}/avatar-${Date.now()}.jpg`
+      const { error: upErr } = await supabase.storage.from('waste-photos').upload(path, blob, { contentType: 'image/jpeg' })
+      if (upErr) throw upErr
+      const url = supabase.storage.from('waste-photos').getPublicUrl(path).data.publicUrl
+      const { data, error } = await supabase.from('profiles').update({ avatar_url: url }).eq('id', profile.id).select().maybeSingle()
+      if (error) throw error
+      removeOld(profile.avatar_url)
+      if (data) onSaved(data)
+    } catch (e) {
+      setPhotoMsg(e.message || 'Could not upload the photo. Check your connection and try again.')
+    }
+    setUp(false)
+  }
+
+  const removeAvatar = async () => {
+    if (up) return
+    setUp(true); setPhotoMsg('')
+    const { data, error } = await supabase.from('profiles').update({ avatar_url: null }).eq('id', profile.id).select().maybeSingle()
+    setUp(false)
+    if (error) return setPhotoMsg(error.message)
+    removeOld(profile.avatar_url)
+    if (data) onSaved(data)
+  }
+
   if (view === 'name') return <NameEdit profile={profile} onSaved={onSaved} onBack={back} />
+  if (view === 'email') return <EmailEdit email={email} onBack={back} />
   if (view === 'phone') return <PhoneEdit profile={profile} onSaved={onSaved} onBack={back} />
   if (view === 'password') return <PasswordEdit onBack={back} />
 
@@ -207,9 +303,20 @@ export default function Profile({ profile, email, onSaved }) {
   return (
     <div className="max-w-md mx-auto space-y-5">
       <div className="text-center pt-2">
-        <div className="mx-auto w-24 h-24 rounded-full bg-green-700 text-white text-4xl font-extrabold flex items-center justify-center font-display">
-          {(profile.name || email || '?')[0].toUpperCase()}
+        <div className="relative mx-auto w-24 h-24">
+          <Avatar name={profile.name || email} url={profile.avatar_url} size={96} />
+          <button type="button" onClick={() => fileRef.current && fileRef.current.click()} disabled={up}
+            aria-label={profile.avatar_url ? 'Change profile photo' : 'Add profile photo'}
+            className="absolute -bottom-1 -right-1 w-11 h-11 rounded-full bg-white border-2 border-green-700 text-green-800 flex items-center justify-center">
+            {up ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
+          </button>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden"
+            onChange={(e) => { uploadAvatar(e.target.files[0]); e.target.value = '' }} />
         </div>
+        {profile.avatar_url && (
+          <div><button type="button" onClick={removeAvatar} disabled={up} className="text-sm font-semibold text-red-700 min-h-[44px] px-3">Remove photo</button></div>
+        )}
+        {photoMsg && <p role="alert" className="text-sm text-red-700 mt-1">{photoMsg}</p>}
         <h1 className="mt-3 text-xl font-extrabold text-ink">{profile.name || 'No name'}</h1>
         <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 capitalize">{profile.role}</span>
         <p className="text-sm text-muted mt-2">{email}</p>
@@ -227,6 +334,7 @@ export default function Profile({ profile, email, onSaved }) {
 
       <div className="bg-white border border-line rounded-2xl divide-y divide-line">
         <Row icon={User} label="Edit name" value={profile.name} onClick={() => setView('name')} />
+        <Row icon={AtSign} label="Email address" value={email} onClick={() => setView('email')} />
         <Row icon={Phone} label="Phone number" value={profile.phone || 'Not added'} onClick={() => setView('phone')} />
         <Row icon={Lock} label="Change password" onClick={() => setView('password')} />
         <Row icon={Recycle} label="Waste sorting guide" onClick={() => setView('guide')} />

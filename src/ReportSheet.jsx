@@ -46,7 +46,10 @@ export default function ReportSheet({ r, collectors, who, onClose, reload }) {
   }
 
   const assign = (id) =>
-    update(id ? { assigned_to: id, status: 'assigned' } : { assigned_to: null, status: 'approved' })
+    {
+    if (r.status === 'in_progress' && !window.confirm('This collector has already started. Move the job to another collector?')) return
+    return update(id ? { assigned_to: id, status: 'assigned' } : { assigned_to: null, status: 'approved' })
+  }
 
   const confirmReject = () => {
     if (!reason.trim()) return setErr('Write a reason for the resident.')
@@ -134,15 +137,15 @@ export default function ReportSheet({ r, collectors, who, onClose, reload }) {
             </div>
           )}
 
-          {(r.status === 'approved' || r.status === 'assigned') && (
+          {['approved', 'assigned', 'in_progress'].includes(r.status) && (
             <div className="space-y-2">
-              <label htmlFor="asg" className="text-sm font-semibold text-ink">Assign a collector</label>
+              <label htmlFor="asg" className="text-sm font-semibold text-ink">{r.status === 'approved' ? 'Assign a collector' : 'Reassign to another collector'}</label>
               <select id="asg" className="field" disabled={busy} value={r.assigned_to || ''} onChange={(e) => assign(e.target.value)}>
-                <option value="">Unassigned</option>
+                {r.status !== 'in_progress' && <option value="">Unassigned</option>}
                 {collectors.map((c) => <option key={c.id} value={c.id}>{c.name || 'Collector'}</option>)}
               </select>
-              {r.status === 'assigned' && (
-                <p className="text-xs text-muted">{r.accepted_at ? 'Accepted by the collector.' : 'Waiting for the collector to accept.'}</p>
+              {['assigned', 'in_progress'].includes(r.status) && (
+                <p className="text-xs text-muted">{r.status === 'in_progress' ? 'In progress since ' + ago(r.started_at) + '.' : r.accepted_at ? 'Accepted by the collector.' : 'Not accepted yet. Assigned ' + ago(r.assigned_at) + '.'}</p>
               )}
               {r.status === 'approved' && r.decline_reason && (
                 <p className="text-xs text-amber-800">{declinedBy} declined: {r.decline_reason}. Assign another collector.</p>
